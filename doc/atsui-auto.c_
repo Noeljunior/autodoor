@@ -1,0 +1,49 @@
+#include "ats.h"
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ *                                 SYSUI INTERFACE
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+double auto_times[3] = {10.0, 5.0, 2.5};
+double auto_positions[3] = {0.0, 8.34, 16.10};
+int auto_min = 0;
+int auto_max = 2;
+int auto_position;
+int auto_dir;
+double  auto_time;
+
+void atsui_auto_init() {
+    athlcd_clear();
+
+    auto_position = 1;
+    auto_dir = -1;
+    auto_time = 0.0;
+}
+
+void atsui_auto(double dt) {
+    if (athin_longclicked(ATHIN_OK)) {
+        atsui_changestate(ATSUI_MANUAL);
+        return;
+    }
+    athlcd_printf(0, "[A] %6.2f %6.2f", athdecoder_position(ATHD_SIDEA),
+        athdecoder_rps(ATHD_SIDEA));
+
+
+    
+
+    if (auto_time <= 0.0) {
+        auto_position += auto_dir;
+        auto_time = auto_times[auto_position]; // TODO ADD WALKING TIME
+        
+        if (auto_position == auto_min || auto_position == auto_max) {
+            auto_dir *= -1;
+        }
+        
+        athmotor_goto(ATHM_SIDEA, auto_positions[auto_position], ATHM_STICKY);
+    } else if (!athmotor_targeted(ATHM_SIDEA)) {
+        athlcd_printf(1, "Going to %.2f...", auto_positions[auto_position]);
+    } else {
+        auto_time -= dt;
+        athlcd_printf(1, "%.2f in %4.1fs", auto_positions[auto_position + auto_dir], auto_time);
+    }
+
+}

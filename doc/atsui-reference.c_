@@ -1,0 +1,98 @@
+#include "ats.h"
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ *                                 SYSUI INTERFACE
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+uint8_t ref_state;
+int32_t ref_init;
+double  ref_wait;
+int32_t ref_safe;
+int32_t t;
+
+void atsui_reference_init() {
+    athlcd_clear();
+
+    ref_wait  = 0.0;
+    ref_state = 0;
+    ref_safe  = 0;
+}
+
+void atsui_reference(double dt) {
+
+}
+
+
+
+
+
+void none(double dt) {
+    if (athin_longclicked(ATHIN_OK)) {
+        atsui_changestate(ATSUI_MANUAL);
+        return;
+    }
+    athlcd_printf(0, "[R] %ld %ldkmh", athdecoder_read(ATHD_SIDEA), athdecoder_diff(ATHD_SIDEA));
+    uint32_t speed = abs(athdecoder_diff(ATHD_SIDEA));
+
+    if (athin_clicked(ATHIN_OK)) {
+        ref_state = 4;
+    }
+
+
+    #define ref_delta   10
+    #define REF_SAFE    15000L
+    ref_wait -= dt;
+
+    if (ref_state == 0) { /* init ref */
+        athmotor_gos(ATHM_SIDEA, ATHM_DOWN, ATHM_SLOW);
+        //athlcd_printf(1, "Starting reference");
+        ref_safe = athdecoder_read(ATHD_SIDEA);
+        ref_wait = 0.5;
+        ref_state = 1;
+    } else
+    if (ref_state == 1) { /* roll down */
+        athlcd_printf(1, "Rolling down");
+        if (speed < ref_delta && ref_wait < 0.0) {
+            athmotor_go(ATHM_SIDEA, ATHM_BRAKE | ATHM_HARD);
+            ref_wait = 0.25;
+            ref_state = 2;
+        }
+    } else
+    if (ref_state == 2) { /* small wait */
+        if (ref_wait < 0.0) {
+            int32_t t = ref_safe - athdecoder_read(ATHD_SIDEA) - 2500L;
+            ref_safe = t > REF_SAFE ? t : REF_SAFE;
+            athdecoder_reset(ATHD_SIDEA);
+            athmotor_gos(ATHM_SIDEA, ATHM_UP, ATHM_FAST);
+            ref_wait = 0.5;
+            ref_state = 3;
+        }
+    } else
+    if (ref_state == 3) { /* rolling up */
+        athlcd_printf(1, "Rolling up %ld", ref_safe);
+        if (athdecoder_read(ATHD_SIDEA) > ref_safe) {
+            athmotor_gos(ATHM_SIDEA, ATHM_UP, ATHM_SLOW);
+            athlcd_printf(1, "SAFING %ld", ref_safe);
+        }
+        if (speed < ref_delta && ref_wait < 0.0) {
+            ref_state = 4;
+            ref_wait = 0.5;
+            //sheetlenght = athdecoder_read(ATHD_SIDEA);
+            athmotor_go(ATHM_SIDEA, ATHM_DOWN);
+        }
+    } else
+    if (ref_state == 4) { /* go to zero */
+        if (athdecoder_read(ATHD_SIDEA) < 2000 && ref_wait < 0.0) {
+            ref_state = 5;
+            athmotor_go(ATHM_SIDEA, ATHM_DOWN);
+        }
+        return;
+    } else
+    if (ref_state == 5) { /* sheet reference */
+        athmotor_go(ATHM_SIDEA, ATHM_BRAKE);
+        atsui_changestate(ATSUI_MANUAL);
+        return;
+    }
+}
+
+
+
+

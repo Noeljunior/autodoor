@@ -1,0 +1,226 @@
+#include "ats.h"
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ *                                 SYSUI INTERFACE
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*
+    + free runing
+        - [roll up]
+        - [roll down]
+        - [speed up]
+        - [speed down]
+*/
+
+
+
+
+#define MANUAL    0
+#define REFERENCE 1
+#define SETUP     2
+
+double led_mode_blink[] = {0.1, 0.2, 0.1, 0.2};
+
+void                m_manual(double dt);
+void                m_reference(double dt);
+void                m_setup(double dt);
+
+
+void atsui_manual_init() {
+    athlcd_clear();
+    athout_sequence(ATHOUT_LED1, led_mode_blink, 4, ATHOUT_REPEAT_YES);
+}
+
+int8_t selector = 0;
+int8_t selected = -1;
+
+
+void atsui_manual(double dt) {
+    athlcd_printf(0, "[M] MODO MANUAL");
+
+
+    /*if      (athin_pressed(ATHIN_OK))       athlcd_printf(1, "OK");
+    else if (athin_pressed(ATHIN_CANCEL))   athlcd_printf(1, "CANCEL");
+    else if (athin_pressed(ATHIN_UP))       athlcd_printf(1, "UP");
+    else if (athin_pressed(ATHIN_DOWN))     athlcd_printf(1, "DOWN");
+    else if (athin_pressed(ATHIN_LEFT))     athlcd_printf(1, "LEFT");
+    else if (athin_pressed(ATHIN_RIGHT))    athlcd_printf(1, "RIGHT");
+    else                                    athlcd_printf(1, "NONE");
+    return;*/
+
+
+    /* sub menus */
+    if      (selected == MANUAL)    m_manual(dt);
+    else if (selected == REFERENCE) m_reference(dt);
+    else if (selected == SETUP)     m_setup(dt);
+    else {
+        if (athin_clicked(ATHIN_RIGHT)) selector++;
+        if (athin_clicked(ATHIN_LEFT))  selector--;
+        if (athin_clicked(ATHIN_OK))    selected = selector;
+
+        //if (selector < 0)      selector = 0;
+        //if (selector > SETUP)  selector = SETUP;
+        selector = abs(selector) % (SETUP + 1);
+
+        switch (selector) {
+            case MANUAL:
+                athlcd_printf(1, "<controlo liv.>");
+                break;
+            case REFERENCE:
+                athlcd_printf(1, "<referenciar>");
+                break;
+            case SETUP:
+                athlcd_printf(1, "<configurar>");
+                break;
+        }
+    }
+}
+
+void m_manual(double dt) {
+    athlcd_printf(0, "[M] CONTROL LIVRE.");
+    if (athin_clicked(ATHIN_CANCEL)) selected = -1;
+
+    athlcd_printf(1, "%6.2fr %5.2frps", athdecoder_position(ATHD_SIDEA),
+        athdecoder_rps(ATHD_SIDEA));
+
+    if (athin_pressed(ATHIN_UP)) {
+        athmotor_gos(ATHM_SIDEA, ATHM_UP, ATHM_NORMAL);
+    } else
+    if (athin_pressed(ATHIN_DOWN)) {
+        athmotor_gos(ATHM_SIDEA, ATHM_DOWN, ATHM_NORMAL);
+    }
+
+    if (athin_released(ATHIN_UP) || athin_released(ATHIN_DOWN)) {
+        athmotor_go(ATHM_SIDEA, ATHM_BRAKE);
+    }
+
+    if (athin_clicked(ATHIN_LEFT)) {
+        //athmotor_goto(ATHM_SIDEA, athmotor_position(ATHM_SIDEA) - 3.0,
+        //    ATHM_ONESHOT);
+        athmotor_gos(ATHM_SIDEA, ATHM_UP, ATHM_SLOW);
+    }
+    if (athin_clicked(ATHIN_RIGHT)) {
+        //athmotor_goto(ATHM_SIDEA, athmotor_position(ATHM_SIDEA) + 3.0,
+        //    ATHM_ONESHOT);
+        athmotor_gos(ATHM_SIDEA, ATHM_DOWN, ATHM_SLOW);
+    }
+    if (athin_released(ATHIN_LEFT) || athin_released(ATHIN_RIGHT)) {
+        athmotor_go(ATHM_SIDEA, ATHM_BRAKE);
+    }
+}
+
+int8_t  ref_state = -1;
+double  ref_wait;
+double  ref_init, ref_end;
+
+int32_t ref_safe;
+int32_t t;
+
+void m_reference(double dt) {
+    if (ref_state == -1) { /* init */
+        ref_state = 0;
+    } else
+    if (ref_state == 0) { /* stand by */
+        athlcd_printf(0, "[M] REFERENCIAR");
+        if (athin_clicked(ATHIN_CANCEL)) selected = ref_state = -1;
+
+        athlcd_printf(1, "Referenciar?");
+        if (athin_longclicked(ATHIN_OK)) ref_state = 1;
+
+    } else { /* reference state machine */
+        if (ref_wait > 0.0) ref_wait -= dt;
+        if (ref_state == 1) { /* order down */
+            athmotor_gos(ATHM_SIDEA, ATHM_DOWN, ATHM_SLOW);
+            ref_wait = 0.5;
+            ref_state = 2;
+        } else
+        if (ref_state == 2) { /* going down... */
+            athlcd_printf(1, "Enrolando...");
+            if (ref_wait < 0.0 && fabs(athdecoder_rps(ATHD_SIDEA)) < 0.1) {
+                athlcd_printf(1, "Inicio");
+                /* stop motor */
+                athmotor_go(ATHM_SIDEA, ATHM_BRAKE | ATHM_HARD);
+                ref_wait = 0.5;
+                ref_state = 3;
+            }
+        } else
+        if (ref_safe == 3) { /* wait for reset and reset */
+            if (ref_wait < 0.0) {
+                ref_init = 0.0;
+                athdecoder_reset(ATHD_SIDEA);
+                athmotor_gos(ATHM_SIDEA, ATHM_UP, ATHM_FAST);
+                ref_wait = 0.5;
+                 ref_state = 4;
+            }
+        }
+        if (ref_safe == 4) { /* going up */
+            athlcd_printf(1, "Enrolando...");
+            if (ref_wait < 0.0) {
+            }
+        }
+    }
+}
+
+void m_setup(double dt) {
+
+}
+
+
+    /*if (athin_longclicked(ATHIN_MODE)) {
+        uistate = UI_REFERENCE;
+        athlcd_clear();
+        return;
+    }*/
+    /*athlcd_printf(0, "[M] %6.2f %ldkmh", athdecoder_position(ATHD_SIDEA),
+        (long int) (athdecoder_rps(ATHD_SIDEA)*100.0));*/
+    //athlcd_printf(1, "D: %lu", athdecoder_read());
+
+    /* TURBO */
+    //double fnf = ATHM_NORMAL;
+    //if (athin_longpressed(ATHIN_UP) || athin_longpressed(ATHIN_DOWN)) {
+    //    //fnf = ATHM_FAST;
+    //}
+
+    //if (athin_pressed(ATHIN_UP)) {
+    //    athmotor_gos(ATHM_SIDEA, ATHM_UP, fnf);
+    //    //athout_on(ATHOUT_LED1);
+    //} else
+    //if (athin_pressed(ATHIN_DOWN)) {
+    //    athmotor_gos(ATHM_SIDEA, ATHM_DOWN, fnf);
+    //    //athout_off(ATHOUT_LED2);
+    //}
+
+    //if (athin_released(ATHIN_UP) || athin_released(ATHIN_DOWN)) {
+    //    athmotor_go(ATHM_SIDEA, ATHM_BRAKE);
+    //}
+
+    //if (athin_exclicked(ATHIN_CANCEL)) {
+    //    athdecoder_reset(ATHD_SIDEA);
+    //} else
+    //if (athin_longclicked(ATHIN_CANCEL)) {
+    //    //ui_reference_init();
+    //    return;
+    //}
+
+    //if (athin_longclicked(ATHIN_MODE)) {
+    //    atsui_changestate(ATSUI_AUTO);
+    //    return;
+    //}
+
+
+    //
+    ////athlcd_printf(1, "speed: %ld km/h", athdecoder_speed());
+    ////_delay_ms(300);
+    //if (athin_clicked(ATHIN_OK)) {
+    //    //athlcd_printf(1, "D: %lu", athdecoder_read());
+    //    athmotor_goto(ATHM_SIDEA, 7.5, ATHM_ONESHOT);
+    //}
+    //if (athin_longclicked(ATHIN_OK)) {
+    //    //athlcd_printf(1, "D: %lu", athdecoder_read());
+    //    athmotor_go(ATHM_SIDEA, ATHM_BRAKE);
+    //    athlcd_printf(1, "");
+    //}
+    
+
+    //athlcd_printf(1, "[%d, %d]", count1, count2);
+
+
+
