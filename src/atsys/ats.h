@@ -57,16 +57,18 @@ uint8_t         atspanel_counttrgs_useful(atsp_target * ts);
 void            atspanel_copytrgs(atsp_target * src, atsp_target * dst);
 void            atspanel_savetargets(uint8_t side);
 
-void            atspanel_walk(uint8_t side, uint8_t keyup, uint8_t keydown);
-void            atspanel_hobble_up(uint8_t side, uint8_t keyup,
-                    uint8_t keydown);
-void            atspanel_hobble_down(uint8_t side, uint8_t keyup,
-                    uint8_t keydown);
+void            atspanel_walk(uint8_t side, uint8_t keyup, uint8_t keydown,
+                    uint8_t slow);
+void            atspanel_hobble_up(uint8_t side);
+void            atspanel_hobble_down(uint8_t side);
+void            atspanel_hobble_disable(uint8_t side);
 void            atspanel_free(uint8_t side);
 void            atspanel_brake(uint8_t side);
 uint8_t         atspanel_opened(uint8_t side);
 uint8_t         atspanel_torn(uint8_t side);
 void            atspanel_inconsistent(uint8_t side);
+
+
 
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *

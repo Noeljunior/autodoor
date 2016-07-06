@@ -3,10 +3,10 @@
 /* TODO
     - if entering in a paper and walking, update the trg value
         only if motor is stoped
-
     - what is new config? after a manual reference
-    
     - lost referencing do not imply lost limits ?!
+    - slow speed during conf pubs
+    - slow speed during freecontrol
 
 */
 
@@ -240,12 +240,14 @@ void s_reference(double dt) {
 
 /* * * * * * * * * * * * FREECONTROL * * * * * * * * * * * */
 int8_t f_mode;
+uint8_t f_slow;
 
 void s_freecontrol_init() {
     athlcd_clear();
     athlcd_printf(0, "CONTROLO LIVRE");
 
     f_mode = 0;
+    f_slow = 0;
 }
 
 void s_freecontrol(double dt) {
@@ -261,20 +263,25 @@ void s_freecontrol(double dt) {
     if (f_mode < 0) f_mode = 4 - 1;
     f_mode = abs(f_mode) % (4);
 
+    if (athin_clicked(ATHIN_OK)) f_slow ^= 1;
 
     if (f_mode == 0) { /* normal mode */
-        athlcd_printf(0, "[L] Normal");
-        atspanel_walk(ats_wside(), ATHIN_UP, ATHIN_DOWN);
+        athlcd_printf(0, "[L] Normal     %c", f_slow ? '-' : ' ');
+        atspanel_hobble_disable(ats_wside());
+        atspanel_walk(ats_wside(), ATHIN_UP, ATHIN_DOWN, f_slow);
     } else
     if (f_mode == 1) { /* hobble up */
-        athlcd_printf(0, "[L] Superior");
-        atspanel_hobble_up(ats_wside(), ATHM_UP, ATHM_DOWN);
+        athlcd_printf(0, "[L] Superior   %c", f_slow ? '-' : ' ');
+        atspanel_hobble_up(ats_wside());
+        atspanel_walk(ats_wside(), ATHIN_UP, ATHIN_DOWN, f_slow);
     } else
     if (f_mode == 2) { /* hobble down */
-        athlcd_printf(0, "[L] Inferior");
-        atspanel_hobble_up(ats_wside(), ATHM_UP, ATHM_DOWN);
+        athlcd_printf(0, "[L] Inferior   %c", f_slow ? '-' : ' ');
+        atspanel_hobble_down(ats_wside());
+        atspanel_walk(ats_wside(), ATHIN_UP, ATHIN_DOWN, f_slow);
     } else
     if (f_mode == 3) { /* free */
+        atspanel_hobble_disable(ats_wside());
         athlcd_printf(0, "[L] Livre");
         atspanel_free(ats_wside());
     }
@@ -381,7 +388,11 @@ void s_configpubs(double dt) {
                     trgs[c_ctrg].duration -= 29.0;
             }
 
-            atspanel_walk(ats_wside(), ATHIN_UP, ATHIN_DOWN);
+            uint8_t slow = 1;
+            if (athin_longpressed(ATHIN_UP) || athin_longpressed(ATHIN_DOWN)) {
+                slow = 0;
+            }
+            atspanel_walk(ats_wside(), ATHIN_UP, ATHIN_DOWN, slow);
 
             athlcd_printf(0, "[C] Folha %2d?", c_ctrg + 1);
             athlcd_printf(1, "P: --.--, %s",

@@ -130,12 +130,20 @@ typedef enum    ATHMOTOR {
                     ATHM_HARD           = (1 << 2),
                 } ATHMOTOR;
 #endif
-
+#ifndef TD_ATHMOTORM_H_
+#define TD_ATHMOTORM_H_
+typedef enum    ATHMOTORO {
+                    ATHM_BOTTOM         = -1,
+                    ATHM_BOTH           = 0,
+                    ATHM_TOP            = 1,
+                } ATHMOTORO;
+#endif
 void            athmotor_gos(uint8_t side, uint8_t wherehow, double speedfactor);
 void            athmotor_go(uint8_t side, uint8_t wherehow);
 void            athmotor_gotos(uint8_t side, double towhere, uint8_t sticky,
                                 double speedfactor);
 void            athmotor_goto(uint8_t side, double towhere, uint8_t sticky);
+void            athmotor_which(uint8_t side, ATHMOTOR which);
 double          athmotor_position(uint8_t side);
 double          athmotor_rps(uint8_t side);
 uint8_t         athmotor_targeted(uint8_t side);

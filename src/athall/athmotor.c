@@ -5,6 +5,10 @@
     - paper limiting
     - configurable direction inverter per motor
     - configurable speed atenuation per direction
+    - if braking after slow walking, it gets a peak of pwm
+    - better paper strength techinique
+    - better targeting techinique
+    - return state of motors
 
     no inicio, contar distancia total, dividir por estimativa e estimar
     quantos papeis estão instalados
@@ -14,6 +18,7 @@
 
 
 #define     PWM_HZ          20000UL
+#define     LIMITTHRESHOLD  1000.0
 
 #define     STRENGTH_DIST   ((1.0 - ATHMOTOR_SPEED_START) * \
                             ATHMOTOR_STRENGTH_PERC)
@@ -48,9 +53,11 @@ typedef struct controler {
     double      speedf;
     //double      tspeedf;
 
+    ATHMOTORO   which;
+
     double      target;
     uint8_t     targeted;
-            /* paper limits : +/-1000.0 is no limit defined */
+            /* paper limits : +/-LIMITTHRESHOLD is no limit defined */
     double      limit_start;
     double      limit_end;
 
@@ -167,13 +174,13 @@ void athmotor_gos(uint8_t side, uint8_t wherehow, double speedfactor) {
     if (where == ATHM_STOP) {
         controlers[side]->tstate = STOP;
         controlers[side]->tspeed = 0.0;
-        controlers[side]->speedf = ATHM_NORMAL * ATHMOTOR_SPEED_FACTOR;
+        //controlers[side]->speedf = ATHM_NORMAL * ATHMOTOR_SPEED_FACTOR;
         controlers[side]->mode   = M_NONE;
     } else
     if (where == ATHM_BRAKE) {
         controlers[side]->tstate = BRAKE;
         controlers[side]->tspeed = 0.0;
-        controlers[side]->speedf = ATHM_NORMAL * ATHMOTOR_SPEED_FACTOR;
+        //controlers[side]->speedf = ATHM_NORMAL * ATHMOTOR_SPEED_FACTOR;
         controlers[side]->mode   = M_NONE;
     } else {
         return;
@@ -192,10 +199,15 @@ void athmotor_gotos(uint8_t side, double towhere, uint8_t sticky, double speedfa
     controlers[side]->target = towhere;
     controlers[side]->speedf = speedfactor * ATHMOTOR_SPEED_FACTOR;
     controlers[side]->mode   = sticky == ATHM_STICKY ? M_STICKY : M_ONESHOT;
+    controlers[side]->which  = ATHM_BOTH;
 }
 
 void athmotor_goto(uint8_t side, double towhere, uint8_t sticky) {
     athmotor_gotos(side, towhere, sticky, ATHM_NORMAL);
+}
+
+void athmotor_which(uint8_t side, ATHMOTOR which) {
+    controlers[side]->which = which;
 }
 
 double athmotor_position(uint8_t side) {
@@ -215,13 +227,13 @@ void athmotor_set_limits(uint8_t side, double start, double end) {
     controlers[side]->limit_end   = end;
 }
 void athmotor_unset_limits(uint8_t side) {
-    controlers[side]->limit_start = -1000.0;
-    controlers[side]->limit_end   =  1000.0;
+    controlers[side]->limit_start = -LIMITTHRESHOLD;
+    controlers[side]->limit_end   =  LIMITTHRESHOLD;
 }
 
 uint8_t athmotor_islimited(uint8_t side) {
-    return (controlers[side]->limit_start > -1000.0 &&
-            controlers[side]->limit_end   < 1000.0);
+    return (controlers[side]->limit_start > -LIMITTHRESHOLD &&
+            controlers[side]->limit_end   < LIMITTHRESHOLD);
 }
 
  /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -235,8 +247,8 @@ void initcontrolor(controler * c) {
 
     c->wait1  = 0.0;
 
-    c->limit_start = -1000.0;
-    c->limit_end   =  1000.0;
+    c->limit_start = -LIMITTHRESHOLD;
+    c->limit_end   =  LIMITTHRESHOLD;
 }
 
 void controler_update(double dt, controler * c) {
@@ -296,7 +308,8 @@ void controler_update(double dt, controler * c) {
         if (dist < ATHMOTOR_LIMIT_STOP_DIST) {
             c->state = c->tstate = BRAKE;
             c->speed = c->tspeed = 0.0;
-            c->mode = M_NONE;
+            c->mode  = M_NONE;
+            //c->targeted = 1;
         }
     } else
     if ((*c->dposition + ATHMOTOR_LIMIT_DIST) > c->limit_end &&
@@ -308,7 +321,8 @@ void controler_update(double dt, controler * c) {
         if (dist < ATHMOTOR_LIMIT_STOP_DIST) {
             c->state = c->tstate = BRAKE;
             c->speed = c->tspeed = 0.0;
-            c->mode = M_NONE;
+            c->mode  = M_NONE;
+            //c->targeted = 1;
         }
     }
 
@@ -392,36 +406,66 @@ void controler_update(double dt, controler * c) {
     //if (pwmda > ATHMOTOR_SPEED_ABSMAX) pwmda = ATHMOTOR_SPEED_ABSMAX;
     //if (pwmdb > ATHMOTOR_SPEED_ABSMAX) pwmdb = ATHMOTOR_SPEED_ABSMAX;
 
+    /* disable some motors */
+    if (c->which < 0) { /* disable UP */
+        ath_pin_pwm(&c->mup.ppwm, ATHMOTOR_SPEED_STOP);
+        ath_pin_high(&c->mup.pbreak);
+    }
+    if (c->which > 0) { /* disable DOWN */
+        ath_pin_pwm(&c->mdown.ppwm, ATHMOTOR_SPEED_STOP);
+        ath_pin_high(&c->mdown.pbreak);
+    }
+
     if (c->state == UP) { /* UP */
         /* UP MOTOR */
-        ath_pin_pwm(&c->mup.ppwm, pwmda * ATHMOTOR_CALIB_UPF);
-        ath_pin_low(&c->mup.pdirection);
-        ath_pin_high(&c->mup.pbreak);
+        if (c->which >= 0) {
+            ath_pin_pwm(&c->mup.ppwm, pwmda * ATHMOTOR_CALIB_UPF);
+            ath_pin_low(&c->mup.pdirection);
+            ath_pin_high(&c->mup.pbreak);
+        }
 
         /* DOWN MOTOR */
-        ath_pin_pwm(&c->mdown.ppwm, pwmdb * ATHMOTOR_CALIB_UPF);
-        ath_pin_high(&c->mdown.pdirection);
-        if (dobreak) ath_pin_low(&c->mdown.pbreak);
-        else         ath_pin_high(&c->mdown.pbreak);
+        if (c->which <= 0) {
+            ath_pin_pwm(&c->mdown.ppwm, pwmdb * ATHMOTOR_CALIB_UPF);
+            ath_pin_high(&c->mdown.pdirection);
+            if (dobreak) ath_pin_low(&c->mdown.pbreak);
+            else         ath_pin_high(&c->mdown.pbreak);
+        }
     } else if (c->state == DOWN) { /* DOWN */
         /* UP MOTOR */
-        ath_pin_pwm(&c->mup.ppwm, pwmdb * ATHMOTOR_CALIB_DPF);
-        ath_pin_high(&c->mup.pdirection);
-        if (dobreak) ath_pin_low(&c->mup.pbreak);
-        else         ath_pin_high(&c->mup.pbreak);
+        if (c->which >= 0) {
+            ath_pin_pwm(&c->mup.ppwm, pwmdb * ATHMOTOR_CALIB_DPF);
+            ath_pin_high(&c->mup.pdirection);
+            if (dobreak) ath_pin_low(&c->mup.pbreak);
+            else         ath_pin_high(&c->mup.pbreak);
+        }
 
         /* DOWN MOTOR */
-        ath_pin_pwm(&c->mdown.ppwm, pwmda * ATHMOTOR_CALIB_DPF);
-        ath_pin_low(&c->mdown.pdirection);
-        ath_pin_high(&c->mdown.pbreak);
+        if (c->which <= 0) {
+            ath_pin_pwm(&c->mdown.ppwm, pwmda * ATHMOTOR_CALIB_DPF);
+            ath_pin_low(&c->mdown.pdirection);
+            ath_pin_high(&c->mdown.pbreak);
+        }
     } else if (c->state == BRAKE) {
-        ath_pin_pwm(&c->mup.ppwm,   ATHMOTOR_SPEED_BRAKE);
-        ath_pin_pwm(&c->mdown.ppwm, ATHMOTOR_SPEED_BRAKE);
-        ath_pin_low(&c->mup.pbreak);
-        ath_pin_low(&c->mdown.pbreak);
+        c->speedf = ATHM_NORMAL;
+        /* UP MOTOR */
+        if (c->which >= 0) {
+            ath_pin_pwm(&c->mup.ppwm,   ATHMOTOR_SPEED_BRAKE);
+            ath_pin_low(&c->mup.pbreak);
+        }
+        /* DOWN MOTOR */
+        if (c->which <= 0) {
+            ath_pin_pwm(&c->mdown.ppwm, ATHMOTOR_SPEED_BRAKE);
+            ath_pin_low(&c->mdown.pbreak);
+        }
     } else { /* STOP */
+        c->speedf = ATHM_NORMAL;
+        /* UP MOTOR */
         ath_pin_pwm(&c->mup.ppwm,   ATHMOTOR_SPEED_STOP);
+        ath_pin_high(&c->mup.pbreak);
+        /* DOWN MOTOR */
         ath_pin_pwm(&c->mdown.ppwm, ATHMOTOR_SPEED_STOP);
+        ath_pin_high(&c->mdown.pbreak);
     }
 }
 

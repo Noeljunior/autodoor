@@ -195,24 +195,28 @@ void atspanel_savetargets(uint8_t side) {
     }
 }
 
-void atspanel_walk(uint8_t side, uint8_t keyup, uint8_t keydown) {
-    if (athin_clicked(keyup)) {
-        athmotor_go(ats_wside(), ATHM_UP);
+void atspanel_walk(uint8_t side, uint8_t keyup, uint8_t keydown, uint8_t slow) {
+    if (athin_clicked(keyup) || athin_longclicked(keyup)) {
+        athmotor_gos(ats_wside(), ATHM_UP, slow ? ATHM_SLOW : ATHM_NORMAL);
     } else
-    if (athin_clicked(keydown)) {
-        athmotor_go(ats_wside(), ATHM_DOWN);
+    if (athin_clicked(keydown) || athin_longclicked(keydown)) {
+        athmotor_gos(ats_wside(), ATHM_DOWN, slow ? ATHM_SLOW : ATHM_NORMAL);
     }
     if (athin_released(keyup) || athin_released(keydown)) {
         athmotor_go(ats_wside(), ATHM_BRAKE);
     }
 }
 
-void atspanel_hobble_up(uint8_t side, uint8_t keyup, uint8_t keydown) {
-
+void atspanel_hobble_up(uint8_t side) {
+    athmotor_which(side, ATHM_TOP);
 }
 
-void atspanel_hobble_down(uint8_t side, uint8_t keyup, uint8_t keydown) {
+void atspanel_hobble_down(uint8_t side) {
+    athmotor_which(side, ATHM_BOTTOM);
+}
 
+void atspanel_hobble_disable(uint8_t side) {
+    athmotor_which(side, ATHM_BOTH);
 }
 
 void atspanel_free(uint8_t side) {
