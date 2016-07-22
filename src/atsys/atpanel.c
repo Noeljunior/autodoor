@@ -28,12 +28,16 @@ typedef struct pstate {
     /*
         TASK SPECIFIC
     */
-    /* referencing */
+    /* autoing */
     struct  aauto {
         double      wfd;
         double      wait;
         int8_t      dir;
         uint8_t     trg;
+        uint8_t     ltoggle;
+
+        double      edt;
+        uint8_t     ei;
     } aauto;
     /* referencing */
     struct  aref {
@@ -72,15 +76,16 @@ void atspanel_init() {
 
 
     /* postitions test */
-    /**/settings.target[ATH_SIDEA][0].inuse    = 1;
-    settings.target[ATH_SIDEA][0].target   = 0.73;
-    settings.target[ATH_SIDEA][0].duration = 5.0;
-    settings.target[ATH_SIDEA][3].inuse    = 1;
-    settings.target[ATH_SIDEA][3].target   = 8.77;
-    settings.target[ATH_SIDEA][3].duration = 5.0;
-    settings.target[ATH_SIDEA][9].inuse    = 1;
-    settings.target[ATH_SIDEA][9].target   = 16.84;
-    settings.target[ATH_SIDEA][9].duration = 5.0;
+    /**/
+    settings.target[ATH_SIDEA][13].inuse    = 1;
+    settings.target[ATH_SIDEA][13].target   = 0.73;
+    settings.target[ATH_SIDEA][13].duration = 30.0;
+    settings.target[ATH_SIDEA][14].inuse    = 1;
+    settings.target[ATH_SIDEA][14].target   = 8.77;
+    settings.target[ATH_SIDEA][14].duration = 5.0;
+    settings.target[ATH_SIDEA][15].inuse    = 1;
+    settings.target[ATH_SIDEA][15].target   = 16.84;
+    settings.target[ATH_SIDEA][15].duration = 20.0;
     
     /*settings.target[ATH_SIDEA][10].inuse    = 1;
     settings.target[ATH_SIDEA][10].target   = 12.0;
@@ -265,8 +270,8 @@ void init_panel(pstate * s, uint8_t side, uint8_t door, uint8_t paper) {
     s->trgs  = settings.target[side];
 }
 
-uint8_t getnexti_greedy(atsp_target * t, uint8_t i, int8_t *dir) {
-    uint8_t oi = i;
+uint8_t getnexti_greedy(atsp_target * t, int8_t i, int8_t *dir) {
+    int8_t oi = i;
     while (i >= 0 && i < ATSP_MAXTARGETS) {
         i += *dir;
         if (t[i].inuse && t[i].duration >= 1.0) { /* found */
@@ -344,7 +349,7 @@ void update_panel(double dt, pstate * s) {
             }
 
             /* do run! */
-            if (s->aauto.wait <= 0.0) {
+            if (s->aauto.wait <= 0.0) { /* time's over, get next! */
                 /* find next position */
                 s->aauto.trg = getnexti_greedy(s->trgs, s->aauto.trg,
                     &s->aauto.dir);
@@ -353,15 +358,84 @@ void update_panel(double dt, pstate * s) {
                 /* go to it */
                 athmotor_goto(s->side, s->trgs[s->aauto.trg].target,
                     ATHM_STICKY);
-            } else
-            if (!athmotor_targeted(s->side)) {
-                /* going to it... */
-                athlcd_printf(1, "A ir p/ folha %d", s->aauto.trg + 1);
-            } else {
-                /* waiting */
-                s->aauto.wait -= dt;
-                athlcd_printf(1, "[%2d] Prox %s", s->aauto.trg + 1,
-                    ats_time_tos(s->aauto.wait, 1));
+
+                /* TODO light control : start moving */
+                athrgb_flicker_on(ATHRGB_P1);
+                athrgb_rgb(ATHRGB_P1, 0.0, 0.0, 0.0);
+                athrgb_fadeto(ATHRGB_P1, 1.0, 1.0,  1.0, 3.0, ATHRGB_RGB);
+                //if (s->aauto.trg  == 9) {
+                    s->aauto.edt = 0.0;
+                    s->aauto.ei  = 0;
+                //}
+            } else { /* waiting 'til the next! */
+                if (!athmotor_targeted(s->side)) {
+                    /* going to it... */
+                    athlcd_printf(1, "A ir p/ folha %d", s->aauto.trg + 1);
+                } else {
+                    /* waiting */
+                    s->aauto.wait -= dt;
+                    athlcd_printf(1, "[%2d] Prox %s", s->aauto.trg + 1,
+                        ats_time_tos(s->aauto.wait, 1));
+
+                    /* TODO light control : target after arrived */
+                    if (s->aauto.wait > 1.0 && !s->aauto.ltoggle) { /* arrived */
+                        athrgb_flicker_off(ATHRGB_P1);
+                        athrgb_rgb(ATHRGB_P1, 0.0, 0.0, 0.0);
+                        athrgb_fadeto(ATHRGB_P1, 1.0, 1.0,  1.0, 1.0, ATHRGB_RGB);
+                        s->aauto.ltoggle = 1;
+                    } else
+                    /* TODO light control : target before departure */
+                    if (s->aauto.wait < 1.0 && s->aauto.ltoggle) { /* will departure */
+                        athrgb_fadeto(ATHRGB_P1, 0.0, 0.0,  0.0, 1.0, ATHRGB_RGB);
+                        s->aauto.ltoggle = 0;
+                    }
+
+                    if (s->aauto.wait > 1.0) {
+                        s->aauto.edt -= dt;
+                        if (s->aauto.trg == 13) {
+                            if (s->aauto.ei == 24 && s->aauto.edt <= 0.0) {
+                                athrgb_fadeto(ATHRGB_P1, 1.0, 1.0, 0.0, 1.0, ATHRGB_RGB);
+                                s->aauto.ei++;
+                                s->aauto.edt = 1.5;
+                            } else
+                            if (s->aauto.ei == 25 && s->aauto.edt <= 0.0) {
+                                athrgb_fadeto(ATHRGB_P1, 1.0, 1.0, 1.0, 3.0, ATHRGB_RGB);
+                                s->aauto.ei = 0;
+                                s->aauto.edt = 5.0;
+                            } else
+                            if ((s->aauto.ei % 2) == 0 && s->aauto.edt <= 0.0) {
+                                athrgb_fadeto(ATHRGB_P1, 1.0, 0.0,  0.0, 0.08, ATHRGB_RGB);
+                                s->aauto.ei++; s->aauto.edt = 0.08;
+                            } else
+                            if ((s->aauto.ei % 2) == 1 && s->aauto.edt <= 0.0) {
+                                athrgb_fadeto(ATHRGB_P1, 0.0, 0.0,  1.0, 0.08, ATHRGB_RGB);
+                                s->aauto.ei++; s->aauto.edt = 0.08;
+                            }
+                        } else
+                        if (s->aauto.trg == 15) {
+                            if (s->aauto.ei == 0 && s->aauto.edt <= 0.0) {
+                                athrgb_fadeto(ATHRGB_P1, 0.0, 1.0, 1.0, 1.0, ATHRGB_RGB);
+                                s->aauto.ei++;
+                                s->aauto.edt = 2.0;
+                            } else
+                            if (s->aauto.ei == 1 && s->aauto.edt <= 0.0) {
+                                athrgb_fadeto(ATHRGB_P1, 1.0, 1.0,  1.0, 4.0, ATHRGB_RGB);
+                                s->aauto.ei++;
+                                s->aauto.edt = 6.0;
+                            } else
+                            if (s->aauto.ei == 2 && s->aauto.edt <= 0.0) {
+                                athrgb_fadeto(ATHRGB_P1, 1.0, 0.0, 0.0, 2.0, ATHRGB_RGB);
+                                s->aauto.ei = 0;
+                                s->aauto.edt = 3.0;
+                            }
+                        } else if (!s->aauto.ltoggle) {
+                            athrgb_rgb(ATHRGB_P1, 0.0, 0.0, 0.0);
+                            athrgb_fadeto(ATHRGB_P1, 1.0, 1.0,  1.0, 1.0, ATHRGB_RGB);
+                            s->aauto.ltoggle = 1;
+                        }
+                        
+                    }
+                }
             }
         } else
         if (s->doing & ATSP_SMANUAL) { /* MANUAL MODE */
@@ -395,6 +469,9 @@ void reference_init(pstate * s) {
 
     athlcd_printf(1, "{R} Referenciar");
 
+    athrgb_fadeto(ATHRGB_P1, 0.0, 0.0,  0.0, 1.0, ATHRGB_RGB);
+    athrgb_flicker_off(ATHRGB_P1);
+
     /* TODO TEST PORPUSES */
     //r->wait      = 2.0;
 }
@@ -416,6 +493,7 @@ uint8_t reference(pstate * s, double dt) {
     if (r->state  == 0) { /* init sequence */
         athdecoder_reset(s->side); /* reset decoder */
         r->safe_dist = athmotor_position(s->side);
+        atspanel_hobble_down(s->side);
         athmotor_gos(s->side, ATHM_DOWN, ATHM_SLOW);
         /* reset motor limits */
         athmotor_unset_limits(s->side);
@@ -426,6 +504,7 @@ uint8_t reference(pstate * s, double dt) {
     if (r->state  == 1) { /* rolling down */
         if (fabs(athmotor_rps(s->side)) < STOP_THRESHOLD &&
                 r->wait < 0.0) {
+            atspanel_hobble_disable(s->side);
             athmotor_go(s->side, ATHM_BRAKE | ATHM_HARD);
             r->wait = 0.25;
             r->state = 2;
@@ -437,6 +516,7 @@ uint8_t reference(pstate * s, double dt) {
                 athmotor_position(s->side) - 3.0;
             athdecoder_reset(s->side);
             r->limit_start = athmotor_position(s->side) + LIMIT_CALIB;
+            atspanel_hobble_up(s->side);
             athmotor_gos(s->side, ATHM_UP, ATHM_FAST);
             r->wait = 0.5;
             r->state = 3;
@@ -449,6 +529,7 @@ uint8_t reference(pstate * s, double dt) {
         }
         if (fabs(athmotor_rps(s->side)) < STOP_THRESHOLD &&
                 r->wait < 0.0) {
+            atspanel_hobble_disable(s->side);
             athmotor_go(s->side, ATHM_BRAKE | ATHM_HARD);
             r->wait = 0.25;
             r->state = 4;

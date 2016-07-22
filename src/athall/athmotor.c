@@ -27,10 +27,6 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *                               PRIVATE DECLARATIONS
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-#define     TRANS_SIN(x, s, f) \
-                (((sin((x) * M_PI - (M_PI / 2)) + 1) * ((f) - (s)) / 2) + (s))
-
-
 typedef enum STATE { UP, DOWN, STOP, BRAKE } STATE;
 typedef enum MODE { M_NONE, M_ONESHOT, M_STICKY, M_FREE } MODE;
 typedef struct motor {
@@ -84,50 +80,38 @@ void athmotor_init() {
      */
 
     /* UP */
-    ath_init_setmode(&controla.mup.pspeed,
-        &GDDR(ATHMOTOR_AUP_SPEED_PIN), &GPORT(ATHMOTOR_AUP_SPEED_PIN),
-        &GPIN(ATHMOTOR_AUP_SPEED_PIN), GBIT(ATHMOTOR_AUP_SPEED_PIN),
-        ATHP_OUTPUT | ATHP_ACTIVEHIGHT | ATHP_SETLOW);
+    ath_init_setmode(&controla.mup.pspeed, GALL(ATHMOTOR_AUP_SPEED_PIN),
+        ATHP_OUTPUT | ATHP_SETLOW);
 
-    ath_init_setmode(&controla.mup.pbreak,
-        &GDDR(ATHMOTOR_AUP_BRAKE_PIN), &GPORT(ATHMOTOR_AUP_BRAKE_PIN),
-        &GPIN(ATHMOTOR_AUP_BRAKE_PIN), GBIT(ATHMOTOR_AUP_BRAKE_PIN),
-        ATHP_OUTPUT | ATHP_ACTIVEHIGHT | ATHP_SETHIGH);
+    ath_init_setmode(&controla.mup.pbreak, GALL(ATHMOTOR_AUP_BRAKE_PIN),
+        ATHP_OUTPUT | ATHP_SETHIGH);
 
-    ath_init_setmode(&controla.mup.pdirection,
-        &GDDR(ATHMOTOR_AUP_DIR_PIN), &GPORT(ATHMOTOR_AUP_DIR_PIN),
-        &GPIN(ATHMOTOR_AUP_DIR_PIN), GBIT(ATHMOTOR_AUP_DIR_PIN),
-        ATHP_OUTPUT | ATHP_ACTIVEHIGHT | ATHP_SETLOW);
+    ath_init_setmode(&controla.mup.pdirection, GALL(ATHMOTOR_AUP_DIR_PIN),
+        ATHP_OUTPUT | ATHP_SETLOW);
 
-    ath_init_setmode(&controla.mup.pfault,
-        &GDDR(ATHMOTOR_AUP_FAULT_PIN), &GPORT(ATHMOTOR_AUP_FAULT_PIN),
-        &GPIN(ATHMOTOR_AUP_FAULT_PIN), GBIT(ATHMOTOR_AUP_FAULT_PIN),
-        ATHP_INPUT | ATHP_ACTIVEHIGHT | ATHP_SETLOW);
+    ath_init_setmode(&controla.mup.pfault, GALL(ATHMOTOR_AUP_FAULT_PIN),
+        ATHP_INPUT | ATHP_SETLOW);
 
-    ath_init_pwm(&controla.mup.ppwm, ATHP_PWM_5C, TOP_F_PS(PWM_HZ, 1), 1);
+    ath_init_setmode(&controla.mup.ppwm, GALL(ATHMOTOR_AUP_PWM_PIN),
+        ATHP_OUTPUT);
+    ath_init_pwm(&controla.mup.ppwm, ATHMOTOR_AUP_PWM_PWM, TOP_F_PS(PWM_HZ, 1), 1);
 
     /* DOWN */
-    ath_init_setmode(&controla.mdown.pspeed,
-        &GDDR(ATHMOTOR_ADOWN_SPEED_PIN), &GPORT(ATHMOTOR_ADOWN_SPEED_PIN),
-        &GPIN(ATHMOTOR_ADOWN_SPEED_PIN), GBIT(ATHMOTOR_ADOWN_SPEED_PIN),
-        ATHP_OUTPUT | ATHP_ACTIVEHIGHT | ATHP_SETLOW);
+    ath_init_setmode(&controla.mdown.pspeed, GALL(ATHMOTOR_ADOWN_SPEED_PIN),
+        ATHP_OUTPUT | ATHP_SETLOW);
 
-    ath_init_setmode(&controla.mdown.pbreak,
-        &GDDR(ATHMOTOR_ADOWN_BRAKE_PIN), &GPORT(ATHMOTOR_ADOWN_BRAKE_PIN),
-        &GPIN(ATHMOTOR_ADOWN_BRAKE_PIN), GBIT(ATHMOTOR_ADOWN_BRAKE_PIN),
-        ATHP_OUTPUT | ATHP_ACTIVEHIGHT | ATHP_SETHIGH);
+    ath_init_setmode(&controla.mdown.pbreak, GALL(ATHMOTOR_ADOWN_BRAKE_PIN),
+        ATHP_OUTPUT | ATHP_SETHIGH);
 
-    ath_init_setmode(&controla.mdown.pdirection,
-        &GDDR(ATHMOTOR_ADOWN_DIR_PIN), &GPORT(ATHMOTOR_ADOWN_DIR_PIN),
-        &GPIN(ATHMOTOR_ADOWN_DIR_PIN), GBIT(ATHMOTOR_ADOWN_DIR_PIN),
-        ATHP_OUTPUT | ATHP_ACTIVEHIGHT | ATHP_SETLOW);
+    ath_init_setmode(&controla.mdown.pdirection, GALL(ATHMOTOR_ADOWN_DIR_PIN),
+        ATHP_OUTPUT | ATHP_SETLOW);
 
-    ath_init_setmode(&controla.mdown.pfault,
-        &GDDR(ATHMOTOR_AUP_FAULT_PIN), &GPORT(ATHMOTOR_AUP_FAULT_PIN),
-        &GPIN(ATHMOTOR_AUP_FAULT_PIN), GBIT(ATHMOTOR_AUP_FAULT_PIN),
-        ATHP_INPUT | ATHP_ACTIVEHIGHT | ATHP_SETLOW);
+    ath_init_setmode(&controla.mdown.pfault, GALL(ATHMOTOR_AUP_FAULT_PIN),
+        ATHP_INPUT | ATHP_SETLOW);
 
-    ath_init_pwm(&controla.mdown.ppwm, ATHP_PWM_5B, TOP_F_PS(PWM_HZ, 1), 1);
+    ath_init_setmode(&controla.mdown.ppwm, GALL(ATHMOTOR_ADOWN_PWM_PIN),
+        ATHP_OUTPUT);
+    ath_init_pwm(&controla.mdown.ppwm, ATHMOTOR_ADOWN_PWM_PWM, TOP_F_PS(PWM_HZ, 1), 1);
 
     initcontrolor(controlers[ATHM_SIDEA]);
 
@@ -260,16 +244,26 @@ void controler_update(double dt, controler * c) {
         /* TODO speed limit based on remaining distance */
         double speedlimit = 1.0;
 
-        if (dist < 0.1) {
-            speedlimit = 0.2;
-        } else
-        if (dist < 1.5) {
-            speedlimit = 0.2;
-            if (c->speedf > ATHM_NORMAL)
-                c->speedf = ATHM_NORMAL;
-        } else {
-            speedlimit = 1.0;
+        //if (dist < 0.1) {
+        //    speedlimit = 0.0;
+        //} else
+        //if (dist < 1.0) {
+        //    speedlimit = 0.1;
+        //    if (c->speedf > ATHM_NORMAL)
+        //        c->speedf = ATHM_NORMAL;
+        //} else {
+        //    speedlimit = 1.0;
+        //}
+
+        #define THRESHOLD 1.0
+        #define THRESHOLD_DIFF 0.05
+        if (dist < THRESHOLD) {
+            double pdist = dist / THRESHOLD;
+            //if (fabs(c->tspeed - pdist) > THRESHOLD_DIFF)
+            speedlimit = ATHT_EXP(pdist, 0.01, 1.0);
+            //speedlimit = pdist;
         }
+
 
         /* set direction */
         if (*c->dposition < c->target) { /* need to go up */
@@ -351,7 +345,7 @@ void controler_update(double dt, controler * c) {
     else                     c->state = c->tstate;
 
     /* compute the pwm */
-    double pwmda = fabs(TRANS_SIN(c->speed, ATHMOTOR_SPEED_START, c->speedf));
+    double pwmda = fabs(ATHT_SIN(c->speed, ATHMOTOR_SPEED_START, c->speedf));
     double pwmdb = pwmda;
 
     /* TODO strength on low speeding */
@@ -359,15 +353,17 @@ void controler_update(double dt, controler * c) {
     if (fabs(c->speed) < ATHMOTOR_STRENGTH_PERC) {
         double diff = fabs(c->speed);
         
+        //if (diff > 0.8) {
+        //    diff = 0.8;
+        //}
+        //if (diff <= (ATHMOTOR_SPEED_START / 2.0)) {
+        //    diff = 0.1;
+        //}
+        //if (diff <= 0.1) {
+        //    //pwmdb = 0.5;
+        //    //dobreak = 1;
+        //}
         pwmdb = pwmda * diff;
-        
-        if (diff <= 0.2) {
-            pwmdb = 0.0;
-        }
-        if (diff <= 0.1) {
-            //pwmdb = 0.5;
-            //dobreak = 1;
-        }
     }
 
     /* TODO check if speed is OK */
@@ -403,69 +399,72 @@ void controler_update(double dt, controler * c) {
     /* stop if asked */
 
     /* check for absolute maximum */
-    //if (pwmda > ATHMOTOR_SPEED_ABSMAX) pwmda = ATHMOTOR_SPEED_ABSMAX;
-    //if (pwmdb > ATHMOTOR_SPEED_ABSMAX) pwmdb = ATHMOTOR_SPEED_ABSMAX;
+    if (pwmda > ATHMOTOR_SPEED_ABSMAX) pwmda = ATHMOTOR_SPEED_ABSMAX;
+    if (pwmdb > ATHMOTOR_SPEED_ABSMAX) pwmdb = ATHMOTOR_SPEED_ABSMAX;
+
+    if (pwmda < ATHMOTOR_SPEED_ABSMIN) pwmda = ATHMOTOR_SPEED_ABSMIN;
+    if (pwmdb < ATHMOTOR_SPEED_ABSMIN) pwmdb = ATHMOTOR_SPEED_ABSMIN;
 
     /* disable some motors */
     if (c->which < 0) { /* disable UP */
         ath_pin_pwm(&c->mup.ppwm, ATHMOTOR_SPEED_STOP);
-        ath_pin_high(&c->mup.pbreak);
+        ath_pin_set(&c->mup.pbreak, ATH_HIGH);
     }
     if (c->which > 0) { /* disable DOWN */
         ath_pin_pwm(&c->mdown.ppwm, ATHMOTOR_SPEED_STOP);
-        ath_pin_high(&c->mdown.pbreak);
+        ath_pin_set(&c->mdown.pbreak, ATH_HIGH);
     }
 
     if (c->state == UP) { /* UP */
         /* UP MOTOR */
         if (c->which >= 0) {
-            ath_pin_pwm(&c->mup.ppwm, pwmda * ATHMOTOR_CALIB_UPF);
-            ath_pin_low(&c->mup.pdirection);
-            ath_pin_high(&c->mup.pbreak);
+            ath_pin_pwm(&c->mup.ppwm, pwmda * ATHMOTOR_CALIB_UPF * ATHMOTOR_CALIB_MUP);
+            ath_pin_set(&c->mup.pdirection, ATH_LOW);
+            ath_pin_set(&c->mup.pbreak, ATH_HIGH);
         }
 
         /* DOWN MOTOR */
         if (c->which <= 0) {
-            ath_pin_pwm(&c->mdown.ppwm, pwmdb * ATHMOTOR_CALIB_UPF);
-            ath_pin_high(&c->mdown.pdirection);
-            if (dobreak) ath_pin_low(&c->mdown.pbreak);
-            else         ath_pin_high(&c->mdown.pbreak);
+            ath_pin_pwm(&c->mdown.ppwm, pwmdb * ATHMOTOR_CALIB_UPF * ATHMOTOR_CALIB_MDOWN);
+            ath_pin_set(&c->mdown.pdirection, ATH_HIGH);
+            if (dobreak) ath_pin_set(&c->mdown.pbreak, ATH_LOW);
+            else         ath_pin_set(&c->mdown.pbreak, ATH_HIGH);
         }
     } else if (c->state == DOWN) { /* DOWN */
         /* UP MOTOR */
         if (c->which >= 0) {
-            ath_pin_pwm(&c->mup.ppwm, pwmdb * ATHMOTOR_CALIB_DPF);
-            ath_pin_high(&c->mup.pdirection);
-            if (dobreak) ath_pin_low(&c->mup.pbreak);
-            else         ath_pin_high(&c->mup.pbreak);
+            ath_pin_pwm(&c->mup.ppwm, pwmdb * ATHMOTOR_CALIB_DPF * ATHMOTOR_CALIB_MUP);
+            ath_pin_set(&c->mup.pdirection, ATH_HIGH);
+            if (dobreak) ath_pin_set(&c->mup.pbreak, ATH_LOW);
+            else         ath_pin_set(&c->mup.pbreak, ATH_HIGH);
         }
 
         /* DOWN MOTOR */
         if (c->which <= 0) {
-            ath_pin_pwm(&c->mdown.ppwm, pwmda * ATHMOTOR_CALIB_DPF);
-            ath_pin_low(&c->mdown.pdirection);
-            ath_pin_high(&c->mdown.pbreak);
+            ath_pin_pwm(&c->mdown.ppwm, pwmda * ATHMOTOR_CALIB_DPF * ATHMOTOR_CALIB_MDOWN);
+            ath_pin_set(&c->mdown.pdirection, ATH_LOW);
+            ath_pin_set(&c->mdown.pbreak, ATH_HIGH);
         }
     } else if (c->state == BRAKE) {
         c->speedf = ATHM_NORMAL;
         /* UP MOTOR */
         if (c->which >= 0) {
             ath_pin_pwm(&c->mup.ppwm,   ATHMOTOR_SPEED_BRAKE);
-            ath_pin_low(&c->mup.pbreak);
+            ath_pin_set(&c->mup.pbreak, ATH_LOW);
         }
         /* DOWN MOTOR */
         if (c->which <= 0) {
             ath_pin_pwm(&c->mdown.ppwm, ATHMOTOR_SPEED_BRAKE);
-            ath_pin_low(&c->mdown.pbreak);
+            ath_pin_set(&c->mdown.pbreak, ATH_LOW);
         }
     } else { /* STOP */
         c->speedf = ATHM_NORMAL;
         /* UP MOTOR */
         ath_pin_pwm(&c->mup.ppwm,   ATHMOTOR_SPEED_STOP);
-        ath_pin_high(&c->mup.pbreak);
+        ath_pin_set(&c->mup.pbreak, ATH_HIGH);
         /* DOWN MOTOR */
         ath_pin_pwm(&c->mdown.ppwm, ATHMOTOR_SPEED_STOP);
-        ath_pin_high(&c->mdown.pbreak);
+        ath_pin_set(&c->mdown.pbreak, ATH_HIGH);
     }
 }
 

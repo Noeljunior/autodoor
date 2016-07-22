@@ -1,7 +1,7 @@
 #include "ath.h"
 
 /* TODO
-    - active low mode -> invert logic
+    - 
 */
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -47,8 +47,9 @@ typedef struct {
 } out;
 out             outs[ATHOUT_MAX] = {0};
 
-void            outinit(out * o);
+void            outinit(out * o, uint8_t mode);
 void            outupdate(out * o, double dt);
+void            outupdate_pwm(out * o, double dt);
 
 double      SEQ_2BIP[] =  {0.1, 0.9, 0.1, 0.9};
 double      SEQ_3BIP[] =  {0.1, 0.1, 0.1, 0.1};
@@ -61,28 +62,19 @@ ATH_UPL_DECLARE(waitout);
 
 void athout_init() {
     /* ATHOUT_LED1 */
-    outs[ATHOUT_LED1].mode  = DIGITAL;
-    ath_init_setmode(&outs[ATHOUT_LED1].pin,
-        &GDDR(ATHOUT_LED1_PIN), &GPORT(ATHOUT_LED1_PIN),
-        &GPIN(ATHOUT_LED1_PIN), BIT(ATHOUT_LED1_PIN),
-        ATHP_OUTPUT | ATHP_ACTIVEHIGHT | ATHP_SETLOW);
-    outinit(&outs[ATHOUT_LED1]);
+    ath_init_setmode(&outs[ATHOUT_LED1].pin, GALL(ATHOUT_LED1_PIN),
+        ATHP_OUTPUT | ATHP_SETLOW);
+    outinit(&outs[ATHOUT_LED1], DIGITAL);
 
     /* ATHOUT_LED2 */
-    outs[ATHOUT_LED2].mode  = DIGITAL;
-    ath_init_setmode(&outs[ATHOUT_LED2].pin,
-        &GDDR(ATHOUT_LED2_PIN), &GPORT(ATHOUT_LED2_PIN),
-        &GPIN(ATHOUT_LED2_PIN), BIT(ATHOUT_LED2_PIN),
-        ATHP_OUTPUT | ATHP_ACTIVEHIGHT | ATHP_SETLOW);
-    outinit(&outs[ATHOUT_LED2]);
+    ath_init_setmode(&outs[ATHOUT_LED2].pin, GALL(ATHOUT_LED2_PIN),
+        ATHP_OUTPUT | ATHP_SETLOW);
+    outinit(&outs[ATHOUT_LED2], DIGITAL);
 
     /* ATHOUT_SPEAKER */
-    outs[ATHOUT_SPEAKER].mode  = DIGITAL;
-    ath_init_setmode(&outs[ATHOUT_SPEAKER].pin,
-        &GDDR(ATHOUT_SPEAKER_PIN), &GPORT(ATHOUT_SPEAKER_PIN),
-        &GPIN(ATHOUT_SPEAKER_PIN), BIT(ATHOUT_SPEAKER_PIN),
-        ATHP_OUTPUT | ATHP_ACTIVEHIGHT | ATHP_SETLOW);
-    outinit(&outs[ATHOUT_SPEAKER]);
+    ath_init_setmode(&outs[ATHOUT_SPEAKER].pin, GALL(ATHOUT_SPEAKER_PIN),
+        ATHP_OUTPUT | ATHP_SETLOW);
+    outinit(&outs[ATHOUT_SPEAKER], DIGITAL);
 }
 
 
@@ -93,7 +85,11 @@ void athout_update(double dt) {
     //ATH_UPL_CHECK(waitout, FREQUENCY);
 
     for (i = 0; i < ATHOUT_MAX; i++) {
-        outupdate(&outs[i], dt);
+        if (outs[i].mode == PWM) {
+            outupdate_pwm(&outs[i], dt);
+        } else {
+            outupdate(&outs[i], dt);
+        }
     }
 
     //ATH_UPL_RESET(wait);
@@ -106,14 +102,16 @@ void athout_update(double dt) {
 void athout_on(uint8_t out) {
     outs[out].state  = ON;
     outs[out].tstate = ON;
-    ath_pin_high(&outs[out].pin);
+    //ath_pin_high(&outs[out].pin);
+    ath_pin_set(&outs[out].pin, ATH_HIGH);
     outs[out].i = 0;
 }
 
 void athout_off(uint8_t out) {
     outs[out].state  = OFF;
     outs[out].tstate = OFF;
-    ath_pin_low(&outs[out].pin);
+    //ath_pin_low(&outs[out].pin);
+    ath_pin_set(&outs[out].pin, ATH_LOW);
     outs[out].i = 0;
 }
 
@@ -140,14 +138,22 @@ void athout_sequence(uint8_t out, double * v, uint16_t vs, uint8_t r) {
     outs[out].vals  = v;
     outs[out].vsize = vs;
     if (outs[out].vals[0] > 0.0) {
-        ath_pin_high(&outs[out].pin);
+        //ath_pin_high(&outs[out].pin);
+        ath_pin_set(&outs[out].pin, ATH_HIGH);
     }
+}
+
+void athout_dc(uint8_t out, double dc) {
+    if (outs[out].mode != PWM) return;
+
+    ath_pin_pwm(&outs[out].pin, dc);
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *                                 PRIVATE FUNCTIONS
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-void outinit(out * o) {
+void outinit(out * o, uint8_t mode) {
+    o->mode   = mode;
     o->state  = OFF;
     o->tstate = OFF;
     o->dt     = 0.0;
@@ -160,13 +166,15 @@ void outinit(out * o) {
 void outupdate(out * o, double dt) {
     if (o->state == ON) {
         if (!o->i) {
-            ath_pin_high(&o->pin);
+            //ath_pin_high(&o->pin);
+            ath_pin_set(&o->pin, ATH_HIGH);
             o->i = 1;
         }
     } else
     if (o->state == OFF) {
         if (!o->i) {
-            ath_pin_low(&o->pin);
+            //ath_pin_low(&o->pin);
+            ath_pin_set(&o->pin, ATH_LOW);
             o->i = 1;
         }
     } else
@@ -186,8 +194,8 @@ void outupdate(out * o, double dt) {
             o->i ^= 1;
             o->dt -= o->f;
                                         /* do animation */
-            if (o->i) ath_pin_high(&o->pin);
-            else      ath_pin_low(&o->pin);
+            if (o->i) ath_pin_set(&o->pin, ATH_HIGH);//ath_pin_high(&o->pin);
+            else      ath_pin_set(&o->pin, ATH_LOW);//ath_pin_low(&o->pin);
         }
 
     
@@ -203,19 +211,29 @@ void outupdate(out * o, double dt) {
                 o->state = o->tstate;
                 o->i = 0;
                 if (o->vals[0] > 0.0) {
-                    ath_pin_high(&o->pin);
+                    //ath_pin_high(&o->pin);
+                    ath_pin_set(&o->pin, ATH_HIGH);
                 }
                 return;
             }
                                         /* do animation */
-            if (o->i & 1) ath_pin_low(&o->pin);
-            else          ath_pin_high(&o->pin);
+            if (o->i & 1) ath_pin_set(&o->pin, ATH_LOW);//ath_pin_low(&o->pin);
+            else          ath_pin_set(&o->pin, ATH_HIGH);//ath_pin_high(&o->pin);
 
             
         }
     }
 
 }
+
+void outupdate_pwm(out * o, double dt) {
+
+}
+
+
+
+
+
 
 
 

@@ -83,6 +83,7 @@ typedef enum    ATSUI_M {
                     ATSUI_FREECONTROL,
                     ATSUI_CONFIGPUB,
                     ATSUI_SETTINGS,
+                    ATSUI_LIGHT,
                 ATSUI_MAXSTATES } ATSUI_M;
 #endif
 void            atsui_init();

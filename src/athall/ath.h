@@ -17,6 +17,8 @@
  *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 #include "AVRAugment_io.h"
+#define ATH_HIGH                    0x01
+#define ATH_LOW                     0x00
 #define HIGH                        0xFF
 #define LOW                         0x00
 
@@ -45,6 +47,8 @@
 #define GPIN(P)                     GETREG(PIN, P)
 #define GBIT(P)                     R1_BIT(P)
 
+#define GALL(PIN)                   &GDDR(PIN), &GPORT(PIN), &GPIN(PIN), BIT(PIN)
+
 #define ATHPIN(DEF)                 DEF##_PIN
 
 /* Update Limiter */
@@ -53,12 +57,19 @@
                                         return
 #define ATH_UPL_RESET(var)          var = 0.0
 
+/* TRANSFORMATIONS */
+#define     ATHT_SIN(x, s, f)       (((sin((x) * M_PI - (M_PI / 2)) + 1) *\
+                                        ((f) - (s)) / 2) + (s))
+#define     ATHT_EXP(v, em, pm)     (((exp((v) * (em)) - 1) / (exp(em) - 1)) *\
+                                        (pm))
+
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *
  *                                      MODULES
  *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 #include "athall.h"
+#include "ath_pinout.h"
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *                                        ATH
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -71,9 +82,11 @@ typedef enum    ATHP_M {
                     ATHP_ANALOG         = 3,
                     ATHP_PWM            = 4,
                     /* 4th bit */
-                    ATHP_ACTIVEHIGHT    = (1 << 3),
+                    //ATHP_ACTIVEHIGHT    = (1 << 3),
+                    ATHP_SET_PULLUP     = (1 << 3),
                     /* 5th bit */
-                    ATHP_ACTIVELOW      = (1 << 4),
+                    //ATHP_ACTIVELOW      = (1 << 4),
+                    ATHP_UNSET_PULLUP   = (1 << 4),
                     /* 6th bit */
                     ATHP_SETHIGH        = (1 << 5),
                     /* 7th bit */
@@ -122,14 +135,15 @@ typedef struct pin pin;
 
 void            ath_pin_init(pin * p, volatile uint8_t *ddr,
                     volatile uint8_t *port, volatile uint8_t *pin, uint8_t bit);
-void            ath_pin_setmode(pin * p, uint8_t mode);
-void            ath_pin_activelow(pin * p);
-void            ath_pin_activehight(pin * p);
+void            ath_pin_setmode(pin * p, ATHP_M mode);
+void            ath_pin_unsetpullup(pin * p);
+void            ath_pin_setpullup(pin * p);
 void            ath_init_setmode(pin * p, volatile uint8_t *ddr,
                     volatile uint8_t *port, volatile uint8_t *pin, uint8_t bit,
-                    uint8_t mode);
-void            ath_pin_high(pin * p);
-void            ath_pin_low(pin * p);
+                    ATHP_M mode);
+//void            ath_pin_high(pin * p);
+//void            ath_pin_low(pin * p);
+void            ath_pin_set(pin * p, uint8_t m);
 uint8_t         ath_pin_read(pin * p);
         /* PWMs */
 #define         TOP_F_PS(f, ps)     ((uint16_t) (F_CPU / (f) / ps - 1))
@@ -149,11 +163,6 @@ void            athtiming_update(double dt);
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *                                      ATH:LCD
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-/* CONFIG */
-#define ATHLCD_PIN_RS           A0
-#define ATHLCD_PIN_ENABLE       A1
-#define ATHLCD_PIN_DATA         A2  /* first bit of the consecutive 4 bits */
-
 /* PARAMETERS */
 #define ATHLCD_LINEBUFFER       64
 
@@ -164,16 +173,6 @@ void            athlcd_update(double dt);
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *                                      ATH:IN
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-/* CONFIG */
-#define ATHIN_OK_PIN            K0
-#define ATHIN_CANCEL_PIN        K5
-#define ATHIN_UP_PIN            K1
-#define ATHIN_DOWN_PIN          K2
-#define ATHIN_LEFT_PIN          K3
-#define ATHIN_RIGHT_PIN         K4
-#define ATHIN_DOORA_PIN         F6
-#define ATHIN_PAPERA_PIN        F7
-
 /* PARAMETERS */
 #define ATHIN_LPT               0.9        /* long pressed time (s) */
 #define ATHIN_LPR               0.1        /* long clicked repeat time (s) */
@@ -185,49 +184,36 @@ void            athin_update();
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *                                      ATH:OUT
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-/* CONFIG */
-#define ATHOUT_LED1_PIN         K6
-#define ATHOUT_LED2_PIN         K7
-#define ATHOUT_SPEAKER_PIN      F0
-
 /* PARAMETERS */
 
 /* DECLARATIONS */
 void            athout_init();
 void            athout_update(double dt);
 
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ *                                      ATH:RGB
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* PARAMETERS */
+#define ATHRGB_PWM_FREQ_HZ          500L
+
+/* DECLARATIONS */
+void            athrgb_init();
+void            athrgb_update(double dt);
+
+
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *                                      ATH:MOTOR
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-/* CONFIG */
-#define ATHMOTOR_AUP_SPEED_PIN      L5  /* DRIVER A */
-#define ATHMOTOR_AUP_BRAKE_PIN      L3
-#define ATHMOTOR_AUP_DIR_PIN        L7
-#define ATHMOTOR_AUP_FAULT_PIN      L1
-#define ATHMOTOR_AUP_PWM_PIN        5C
-#define ATHMOTOR_ADOWN_SPEED_PIN    L4
-#define ATHMOTOR_ADOWN_BRAKE_PIN    L2
-#define ATHMOTOR_ADOWN_DIR_PIN      L6
-#define ATHMOTOR_ADOWN_FAULT_PIN    L0
-#define ATHMOTOR_ADOWN_PWM_PIN      5B
-
-#define ATHMOTOR_BUP_SPEED_PIN      L5  /* DRIVER B */
-#define ATHMOTOR_BUP_BRAKE_PIN      L3
-#define ATHMOTOR_BUP_DIR_PIN        L7
-#define ATHMOTOR_BUP_FAULT_PIN      L1
-#define ATHMOTOR_BUP_PWM_PIN        5C
-#define ATHMOTOR_BDOWN_SPEED_PIN    L4
-#define ATHMOTOR_BDOWN_BRAKE_PIN    L2
-#define ATHMOTOR_BDOWN_DIR_PIN      L6
-#define ATHMOTOR_BDOWN_FAULT_PIN    L0
-#define ATHMOTOR_BDOWN_PWM_PIN      5B
-
 /* PARAMETERS */
 #define ATHMOTOR_CALIB_UPF          1.15
 #define ATHMOTOR_CALIB_DPF          1.0
+#define ATHMOTOR_CALIB_MUP          1.0
+#define ATHMOTOR_CALIB_MDOWN        0.8
 #define ATHMOTOR_STRENGTH_PERC      0.75
-#define ATHMOTOR_SPEED_FACTOR       0.4
+#define ATHMOTOR_SPEED_FACTOR       0.6
 #define ATHMOTOR_SPEED_ABSMAX       0.9
+#define ATHMOTOR_SPEED_ABSMIN       0.05
 #define ATHMOTOR_SPEED_START        0.15
 #define ATHMOTOR_SPEED_STOP         0.0
 #define ATHMOTOR_SPEED_BRAKE        0.5
@@ -245,8 +231,6 @@ void            athmotor_update(double dt);
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *                                      ATH:DECODER
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-/* CONFIG */
-
 /* PARAMETERS */
 #define ATHDECODER_PPRA         2000
 #define ATHDECODER_PPRB         2000

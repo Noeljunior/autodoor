@@ -42,59 +42,43 @@ void        update_in(double dt, inbutton * in);
 void athin_init() {
     /* ATHIN_OK */
     btns[ATHIN_OK].mode    = DIGITAL;
-    ath_init_setmode(&btns[ATHIN_OK].pin,
-        &GDDR(ATHIN_OK_PIN), &GPORT(ATHIN_OK_PIN),
-        &GPIN(ATHIN_OK_PIN), BIT(ATHIN_OK_PIN),
-        ATHP_INPUT | ATHP_ACTIVELOW | ATHP_SETHIGH | ATHP_INVERT);
+    ath_init_setmode(&btns[ATHIN_OK].pin, GALL(ATHIN_OK_PIN),
+        ATHP_INPUT | ATHP_SET_PULLUP | ATHP_INVERT);
 
     /* ATHIN_CANCEL */
     btns[ATHIN_CANCEL].mode = DIGITAL;
-    ath_init_setmode(&btns[ATHIN_CANCEL].pin,
-        &GDDR(ATHIN_CANCEL_PIN), &GPORT(ATHIN_CANCEL_PIN),
-        &GPIN(ATHIN_CANCEL_PIN), BIT(ATHIN_CANCEL_PIN),
-        ATHP_INPUT | ATHP_ACTIVELOW | ATHP_SETHIGH | ATHP_INVERT);
+    ath_init_setmode(&btns[ATHIN_CANCEL].pin, GALL(ATHIN_CANCEL_PIN),
+        ATHP_INPUT | ATHP_SET_PULLUP | ATHP_INVERT);
 
     /* ATHIN_UP */
     btns[ATHIN_UP].mode = DIGITAL;
-    ath_init_setmode(&btns[ATHIN_UP].pin,
-        &GDDR(ATHIN_UP_PIN), &GPORT(ATHIN_UP_PIN),
-        &GPIN(ATHIN_UP_PIN), BIT(ATHIN_UP_PIN),
-        ATHP_INPUT | ATHP_ACTIVELOW | ATHP_SETHIGH | ATHP_INVERT);
+    ath_init_setmode(&btns[ATHIN_UP].pin, GALL(ATHIN_UP_PIN),
+        ATHP_INPUT | ATHP_SET_PULLUP | ATHP_INVERT);
 
     /* ATHIN_DOWN */
     btns[ATHIN_DOWN].mode = DIGITAL;
-    ath_init_setmode(&btns[ATHIN_DOWN].pin,
-        &GDDR(ATHIN_DOWN_PIN), &GPORT(ATHIN_DOWN_PIN),
-        &GPIN(ATHIN_DOWN_PIN), BIT(ATHIN_DOWN_PIN),
-        ATHP_INPUT | ATHP_ACTIVELOW | ATHP_SETHIGH | ATHP_INVERT);
+    ath_init_setmode(&btns[ATHIN_DOWN].pin, GALL(ATHIN_DOWN_PIN),
+        ATHP_INPUT | ATHP_SET_PULLUP | ATHP_INVERT);
 
     /* ATHIN_LEFT */
     btns[ATHIN_LEFT].mode  = DIGITAL;
-    ath_init_setmode(&btns[ATHIN_LEFT].pin,
-        &GDDR(ATHIN_LEFT_PIN), &GPORT(ATHIN_LEFT_PIN),
-        &GPIN(ATHIN_LEFT_PIN), BIT(ATHIN_LEFT_PIN),
-        ATHP_INPUT | ATHP_ACTIVELOW | ATHP_SETHIGH | ATHP_INVERT);
+    ath_init_setmode(&btns[ATHIN_LEFT].pin, GALL(ATHIN_LEFT_PIN),
+        ATHP_INPUT | ATHP_SET_PULLUP | ATHP_INVERT);
 
     /* ATHIN_RIGHT */
     btns[ATHIN_RIGHT].mode  = DIGITAL;
-    ath_init_setmode(&btns[ATHIN_RIGHT].pin,
-        &GDDR(ATHIN_RIGHT_PIN), &GPORT(ATHIN_RIGHT_PIN),
-        &GPIN(ATHIN_RIGHT_PIN), BIT(ATHIN_RIGHT_PIN),
-        ATHP_INPUT | ATHP_ACTIVELOW | ATHP_SETHIGH | ATHP_INVERT);
+    ath_init_setmode(&btns[ATHIN_RIGHT].pin, GALL(ATHIN_RIGHT_PIN),
+        ATHP_INPUT | ATHP_SET_PULLUP | ATHP_INVERT);
 
     /* ATHIN_DOORA */
     btns[ATHIN_DOORA].mode = SWITCH;
-    ath_init_setmode(&btns[ATHIN_DOORA].pin,
-        &GDDR(ATHIN_DOORA_PIN), &GPORT(ATHIN_DOORA_PIN),
-        &GPIN(ATHIN_DOORA_PIN), BIT(ATHIN_DOORA_PIN),
-        ATHP_INPUT | ATHP_ACTIVEHIGHT | ATHP_SETLOW);
+    ath_init_setmode(&btns[ATHIN_DOORA].pin, GALL(ATHIN_DOORA_PIN),
+        ATHP_INPUT | ATHP_SET_PULLUP | ATHP_INVERT);
 
     /* ATHIN_PAPERA */
     btns[ATHIN_PAPERA].mode = SWITCH;
-    ath_init_setmode(&btns[ATHIN_PAPERA].pin,
-        &GDDR(ATHIN_PAPERA_PIN), &GPORT(ATHIN_PAPERA_PIN),
-        &GPIN(ATHIN_PAPERA_PIN), BIT(ATHIN_PAPERA_PIN),
-        ATHP_INPUT | ATHP_ACTIVEHIGHT | ATHP_SETLOW);
+    ath_init_setmode(&btns[ATHIN_PAPERA].pin, GALL(ATHIN_PAPERA_PIN),
+        ATHP_INPUT | ATHP_UNSET_PULLUP | ATHP_INVERT);
 }
 
 

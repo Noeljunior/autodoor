@@ -89,6 +89,10 @@ typedef enum    ATHOUT {
                     ATHOUT_LED1,
                     ATHOUT_LED2,
                     ATHOUT_SPEAKER,
+                    ATHOUT_LIGHTR,
+                    ATHOUT_LIGHTG,
+                    ATHOUT_LIGHTB,
+                    ATHOUT_LIGHTRGB,
                 ATHOUT_MAX } ATHOUT;
 #endif
 
@@ -96,6 +100,41 @@ void            athout_on(uint8_t out);
 void            athout_off(uint8_t out);
 void            athout_blink(uint8_t out, double f, double t, uint8_t r);
 void            athout_sequence(uint8_t out, double * v, uint16_t vs, uint8_t r);
+void            athout_dc(uint8_t out, double dc);
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ *                                      ATH:RGB
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+#define         ATHRGB_RGB      0
+#define         ATHRGB_HSV      1
+#define         ATHRGB_HSL      2
+#ifndef TD_ATHRTGB_H_
+#define TD_ATHRTGB_H_
+typedef enum    ATHRGB {
+                    ATHRGB_P1,
+                ATHRGB_MAX } ATHRGB;
+#endif
+
+void            athrgb_calib(ATHRGB rgb, double cr, double cg, double cb);
+void            athrgb_ramp(ATHRGB rgb, double rr, double rg, double rb);
+
+void            athrgb_rgb(ATHRGB rgb, double r, double g, double b);
+void            athrgb_hsv(ATHRGB rgb, double h, double s, double v);
+void            athrgb_hsl(ATHRGB rgb, double h, double s, double l);
+
+void            athrgb_fadeto(ATHRGB rgb, double a, double b, double c, double dt, uint8_t t);
+void            athrgb_flicker_on(ATHRGB rgb);
+void            athrgb_flicker_off(ATHRGB rgb);
+uint8_t         athrgb_fading(ATHRGB rgb);
+
+void            HSVtoRGB(double h, double s, double v, double *rgb);
+void            HSLtoRGB(double h, double s, double l, double *rgb);
+//void            athout_on(uint8_t out);
+//void            athout_off(uint8_t out);
+//void            athout_blink(uint8_t out, double f, double t, uint8_t r);
+//void            athout_sequence(uint8_t out, double * v, uint16_t vs, uint8_t r);
+//void            athout_dc(uint8_t out, double dc);
+
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *                                      ATH:MOTOR

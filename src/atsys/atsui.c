@@ -28,7 +28,8 @@ void            s_configpubs_init();
 void            s_configpubs(double dt);
 void            s_settings_init();
 void            s_settings(double dt);
-
+void            s_light_init();
+void            s_light(double dt);
 
 void (* initstates[ATSUI_MAXSTATES]) () = {
                     s_auto_init,
@@ -37,6 +38,7 @@ void (* initstates[ATSUI_MAXSTATES]) () = {
                     s_freecontrol_init,
                     s_configpubs_init,
                     s_settings_init,
+                    s_light_init,
                 };
 void (* updatestates[ATSUI_MAXSTATES]) (double) = {
                     s_auto,
@@ -45,6 +47,7 @@ void (* updatestates[ATSUI_MAXSTATES]) (double) = {
                     s_freecontrol,
                     s_configpubs,
                     s_settings,
+                    s_light,
                 };
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -53,7 +56,8 @@ void (* updatestates[ATSUI_MAXSTATES]) (double) = {
 void atsui_init() {
     uiprevstate = -1;
     atsui_changestate(ATSUI_AUTO);
-    //atsui_changestate(ATSUI_MAIN);
+    //atsui_changestate(ATSUI_FREECONTROL);
+    //atsui_changestate(ATSUI_LIGHT);
 }
 
 
@@ -136,6 +140,9 @@ void s_main_init() {
     /* TODO gettin here also implies that the system may be consistent.
        we should reset things like references */
     // unset limits so it will reference again
+
+    athout_dc(ATHOUT_LIGHTR, 0.7);
+
 }
 
 void s_main(double dt) {
@@ -164,8 +171,8 @@ void s_main(double dt) {
     if (athin_clicking(ATHIN_RIGHT)) m_selector++;
     if (athin_clicking(ATHIN_LEFT))  m_selector--;
 
-    if (m_selector < 0) m_selector = 4 - 1;
-    m_selector = abs(m_selector) % (4);
+    if (m_selector < 0) m_selector = 6 - 1;
+    m_selector = abs(m_selector) % (6);
 
     switch (m_selector) {
         case 0: athlcd_printf(1, "> controlo livre");
@@ -180,13 +187,25 @@ void s_main(double dt) {
                 return;
             }
             break;
-        case 2: athlcd_printf(1, "> definicoes");
+        case 2: athlcd_printf(1, "> luz");
+            if (athin_clicked(ATHIN_OK)) {
+                atsui_changestate(ATSUI_LIGHT);
+                return;
+            }
+            break;
+        case 3: athlcd_printf(1, "> SMS");
             if (athin_clicked(ATHIN_OK)) {
                 atsui_changestate(ATSUI_SETTINGS);
                 return;
             }
             break;
-        case 3: athlcd_printf(1, "> sair");
+        case 4: athlcd_printf(1, "> definicoes");
+            if (athin_clicked(ATHIN_OK)) {
+                atsui_changestate(ATSUI_SETTINGS);
+                return;
+            }
+            break;
+        case 5: athlcd_printf(1, "> sair");
             if (athin_clicked(ATHIN_OK)) {
                 m_selector = -1;
                 return;
@@ -454,5 +473,101 @@ void s_settings(double dt) {
         atsui_changestate(ATSUI_MAIN);
         return;
     }
+}
+
+
+
+
+
+/* * * * * * * * * * * * LIGHT * * * * * * * * * * * */
+int8_t l_led;
+double l_dc[3];
+double l_hsl[3];
+double blink;
+uint8_t l_light = 0;
+
+void s_light_init() {
+    athlcd_clear();
+    athlcd_printf(0, "LIGHT CONTROL");
+
+    l_led = 0;
+
+    l_hsl[0] = 0.0;
+    l_hsl[1] = 1.0;
+    l_hsl[2] = 0.5;
+    blink = 0.0;
+
+    l_dc[0] = 0.0;
+    l_dc[1] = 1.0;
+    l_dc[2] = 1.0;
+    
+    athrgb_fadeto(ATHRGB_P1, 1.0, 1.0, 1.0, 2.0, ATHRGB_RGB);
+}
+
+void s_light(double dt) {
+    if (athin_clicked(ATHIN_CANCEL)) {
+        atsui_changestate(ATSUI_MAIN);
+        //atspanel_brake(ats_wside());
+        return;
+    }
+
+    if (athin_clicking(ATHIN_RIGHT)) l_led++;
+    if (athin_clicking(ATHIN_LEFT))  l_led--;
+
+    #define L_MMAX 3
+    if (l_led < 0) l_led = L_MMAX - 1;
+    l_led = abs(l_led) % (L_MMAX);
+
+    //if (athin_clicked(ATHIN_OK)) f_slow ^= 1;
+
+    //if (f_mode == 0) { /* normal mode */
+    //    athlcd_printf(0, "[R] %f     %c", f_slow ? '-' : ' ');
+    //} else
+    //if (f_mode == 1) { /* hobble up */
+    //    athlcd_printf(0, "[G] %f   %c", f_slow ? '-' : ' ');
+    //} else
+    //if (f_mode == 2) { /* hobble down */
+    //    athlcd_printf(0, "[B] %f   %c", f_slow ? '-' : ' ');
+    //}
+
+    #define L_SPEED 0.02
+
+    if (athin_clicked(ATHIN_OK)) {
+        l_light ^= 1;
+        athrgb_fadeto(ATHRGB_P1,(double) l_light, (double) l_light, (double) l_light, 2.0, ATHRGB_RGB);
+        athlcd_printf(1, "%.3f", (double) l_light);
+    }
+
+    //blink += dt;
+    //l_hsl[0] += dt/5.0;
+    //l_hsl[2] = (sin(blink * M_PI * 5.0) / 2.0) + 0.5;
+
+    if (athin_clicking(ATHIN_UP)) {
+        l_hsl[l_led] += L_SPEED;
+        if (l_hsl[l_led] > 1.0) l_hsl[l_led] -= 1.0;
+    } else
+    if (athin_clicking(ATHIN_DOWN)) {
+        l_hsl[l_led] -= L_SPEED;
+        if (l_hsl[l_led] < 0.0) l_hsl[l_led] += 1.0;
+    } else
+
+    athlcd_printf(0, "[%c] LIGHT CONTROL",
+        l_led == 0 ? 'H' : (l_led == 1 ? 'S' : 'L'));
+    athlcd_printf(1, "%.2f, %.2f %.2f", l_hsl[0], l_hsl[1], l_hsl[2]);
+
+    //l_hsl[0] = fabs(fmod(l_hsl[0], 1.0));
+    //l_hsl[1] = fabs(fmod(l_hsl[1], 1.0));
+    //l_hsl[2] = fabs(fmod(l_hsl[2], 1.0));
+    //HSLtoRGB(l_hsl[0], l_hsl[1], l_hsl[2], l_dc);
+
+    //athrgb_hsl(ATHRGB_P1, l_hsl[0], l_hsl[1], l_hsl[2]);
+    //athrgb_rgb(ATHRGB_P1, 1, 1, 1);
+
+    athrgb_fadeto(ATHRGB_P1,
+        l_hsl[0], l_hsl[1], l_hsl[2], 0.5, ATHRGB_HSL);
+    //athout_dc(ATHOUT_LIGHTR, 0.5*LEDEXP(l_dc[0], 0.01, 1));
+    //athout_dc(ATHOUT_LIGHTG, LEDEXP(l_dc[1], 0.001, 1));
+    //athout_dc(ATHOUT_LIGHTB, LEDEXP(l_dc[2], 2, 1));
+
 }
 
