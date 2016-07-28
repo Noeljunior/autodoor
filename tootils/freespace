@@ -13,33 +13,38 @@ def _size_by_search(patternstr, output):
         except IndexError:
             return 0
 
-if len(sys.argv) < 3:
-    print("Bad calling. Usage: freespace <bin_file> <flash_max> <sram_max> [<size-bin-path>]")
+if len(sys.argv) < 4:
+    print("Bad calling. Usage: freespace <bin_file> <flash_max> <sram_max> <eeprom_max> [<size-bin-path>]")
     sys.exit(0)
 
 
-firmware = sys.argv[1]
+firmware  = sys.argv[1]
 flash_max = int(sys.argv[2])
 sram_max  = int(sys.argv[3])
+eep_max   = int(sys.argv[4])
 
 sizebinpath = 'size'
-if len(sys.argv) >= 5:
-    sizebinpath = sys.argv[4]
+if len(sys.argv) >= 6:
+    sizebinpath = sys.argv[5]
 
 # get sizes
 output = subprocess.getoutput("%s --format=sysv %s" % (sizebinpath, firmware))
 text_size = _size_by_search('\.text\s+(\d+)', output)
 data_size = _size_by_search('\.data\s+(\d+)', output)
 bss_size = _size_by_search('\.bss\s+(\d+)', output)
+eep_size = _size_by_search('\.eeprom\s+(\d+)', output)
 
 # compute percentages
 flash_size = text_size + data_size
 sram_size = data_size + bss_size
 flash_pct = flash_size * 100 / flash_max if flash_max > 0 else 0
 sram_pct = sram_size * 100 / sram_max if sram_max > 0 else 0
+eep_pct = eep_size * 100 / eep_max if eep_max > 0 else 0
 
-print("Flash usage (%5.1f%%): %6dB out of %6dB\n\
-SRAM  usage (%5.1f%%): %6dB out of %6dB" %
+print("Flash  usage (%5.1f%%): %6dB out of %6dB\n\
+SRAM   usage (%5.1f%%): %6dB out of %6dB\n\
+EEPROM usage (%5.1f%%): %6dB out of %6dB" %
     (flash_pct, flash_size, flash_max,
-     sram_pct, sram_size, sram_max))
+     sram_pct, sram_size, sram_max,
+     eep_pct, eep_size, eep_max))
 
