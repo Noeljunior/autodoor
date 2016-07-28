@@ -284,10 +284,14 @@ void s_freecontrol(double dt) {
 
     if (athin_clicked(ATHIN_OK)) f_slow ^= 1;
 
+
     if (f_mode == 0) { /* normal mode */
         athlcd_printf(0, "[L] Normal     %c", f_slow ? '-' : ' ');
         atspanel_hobble_disable(ats_wside());
         atspanel_walk(ats_wside(), ATHIN_UP, ATHIN_DOWN, f_slow);
+        if (athin_clicking(ATHIN_RIGHT) || athin_clicking(ATHIN_LEFT)) {
+            athmotor_go(ats_wside(), ATHM_BRAKE);
+        }
     } else
     if (f_mode == 1) { /* hobble up */
         athlcd_printf(0, "[L] Superior   %c", f_slow ? '-' : ' ');
@@ -507,7 +511,8 @@ void s_light_init() {
 void s_light(double dt) {
     if (athin_clicked(ATHIN_CANCEL)) {
         atsui_changestate(ATSUI_MAIN);
-        //atspanel_brake(ats_wside());
+        athrgb_flicker_off(ATHRGB_P1);
+        athrgb_rgb(ATHRGB_P1, 0.0, 0.0, 0.0);
         return;
     }
 

@@ -159,14 +159,12 @@ void ath_pin_setpullup(pin * p) {
     if (p->mode != ATHP_INPUT) return;
     /* enable pull-up registor */
     *p->port = *p->port | p->mask;
-    //ath_pin_high(p);
 }
 
 void ath_pin_unsetpullup(pin * p) {
     if (p->mode != ATHP_INPUT) return;
     /* disable pull-up registor */
     *p->port = *p->port & ~p->mask;
-    //ath_pin_low(p);
 }
 
 void ath_init_setmode(pin * p, volatile uint8_t *ddr, volatile uint8_t *port,

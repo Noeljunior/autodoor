@@ -2,6 +2,7 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <avr/pgmspace.h>
+#include <avr/eeprom.h>
 #include <util/delay.h>
 #include <util/atomic.h>
 
@@ -211,7 +212,7 @@ void            athrgb_update(double dt);
 #define ATHMOTOR_CALIB_MUP          1.0
 #define ATHMOTOR_CALIB_MDOWN        0.8
 #define ATHMOTOR_STRENGTH_PERC      0.75
-#define ATHMOTOR_SPEED_FACTOR       0.6
+#define ATHMOTOR_SPEED_FACTOR       0.4
 #define ATHMOTOR_SPEED_ABSMAX       0.9
 #define ATHMOTOR_SPEED_ABSMIN       0.05
 #define ATHMOTOR_SPEED_START        0.15

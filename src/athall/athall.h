@@ -2,12 +2,19 @@
 #include <avr/io.h>
 #include <avr/pgmspace.h>
 #include <util/delay.h>
+#include <avr/eeprom.h>
 
 /* C LIBS */
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <inttypes.h>
+
+#define ATHE_EEP(type, name)        const type EEMEM NV_##name
+#define ATHE_EEP_LOAD(type, name)   const type NV_##name
+
+
+
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *

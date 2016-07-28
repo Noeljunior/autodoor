@@ -24,12 +24,24 @@ typedef enum    ATSP_ASK {
                     ATSP_OFF        = (1 << 0),
                     ATSP_SAUTO      = (1 << 1),
                     ATSP_SMANUAL    = (1 << 2),
-                    ATSP_AREADY     = (1 << 3),
-                    ATSP_FREE       = (1 << 4),
-                    ATSP_REFERENCE  = (1 << 5),
-                    ATSP_OTOP       = (1 << 6),
-                    ATSP_OBOTTOM    = (1 << 7),
+                    ATSP_SSAFE      = (1 << 3),
+                    ATSP_AREADY     = (1 << 4),
+                    ATSP_FREE       = (1 << 5),
+                    ATSP_REFERENCE  = (1 << 6),
+                    ATSP_OTOP       = (1 << 7),
+                    ATSP_OBOTTOM    = (1 << 8),
                 } ATSP_ASK;
+#endif
+#ifndef TD_ATSPE_H_
+#define TD_ATSPE_H_
+typedef enum    ATSP_ERR {
+                    ATSP_ERR_DIRTY    = (1 << 0), /* dirty bit */
+                    ATSP_ERR_PAPER    = (1 << 1), /* no paper detected on IR */
+                    ATSP_ERR_DOOR     = (1 << 2), /* door opened */
+                    ATSP_ERR_MOTOR    = (1 << 3), /* motor error */
+                    ATSP_ERR_PLENMIS  = (1 << 4), /* a new reference mismatch the eeprom */
+                    ATSP_ERR_NOTRGS   = (1 << 5), /* a new reference mismatch the eeprom */
+                } ATSP_ERR;
 #endif
 #ifndef TD_ATSP_S_
 #define TD_ATSP_S_
@@ -47,8 +59,8 @@ typedef struct atsp_target { /* TODO day percentagem viewed */
 void            atspanel_init();
 void            atspanel_update(double dt);
 
-void            atspanel_ask(uint8_t side, uint8_t ask);
-uint8_t         atspanel_isdoing(uint8_t side, uint8_t ask);
+void            atspanel_ask(uint8_t side, ATSP_ASK ask);
+uint8_t         atspanel_isdoing(uint8_t side, ATSP_ASK ask);
 uint8_t         atspanel_mismatched(uint8_t side);
 atsp_target *   atspanel_getrefstmp(uint8_t side);
 atsp_target *   atspanel_getrefs(uint8_t side);
@@ -68,7 +80,10 @@ uint8_t         atspanel_opened(uint8_t side);
 uint8_t         atspanel_torn(uint8_t side);
 void            atspanel_inconsistent(uint8_t side);
 
-
+void            atspanel_adderror(uint8_t side, ATSP_ERR err);
+void            atspanel_clearerror(uint8_t side, ATSP_ERR err);
+uint8_t         atspanel_checkerror(uint8_t side);
+uint8_t         atspanel_erroring(uint8_t side);
 
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *

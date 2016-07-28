@@ -15,9 +15,17 @@ typedef struct syssettings {
 } syssettings;
 syssettings settings;
 
+ATHE_EEP(syssettings, ee_settings) = {0};
+
+
+
+
 /* state */
 typedef struct pstate {
     ATSP_ASK        doing;
+
+    ATSP_ERR        error;
+    double          erroring;
 
     uint8_t         side;
     uint8_t         door;
@@ -34,8 +42,8 @@ typedef struct pstate {
         double      wait;
         int8_t      dir;
         uint8_t     trg;
-        uint8_t     ltoggle;
 
+        uint8_t     ltoggle;
         double      edt;
         uint8_t     ei;
     } aauto;
@@ -79,10 +87,10 @@ void atspanel_init() {
     /**/
     settings.target[ATH_SIDEA][13].inuse    = 1;
     settings.target[ATH_SIDEA][13].target   = 0.73;
-    settings.target[ATH_SIDEA][13].duration = 30.0;
+    settings.target[ATH_SIDEA][13].duration = 10.0;//30.0;
     settings.target[ATH_SIDEA][14].inuse    = 1;
     settings.target[ATH_SIDEA][14].target   = 8.77;
-    settings.target[ATH_SIDEA][14].duration = 5.0;
+    settings.target[ATH_SIDEA][14].duration = 15.0;
     settings.target[ATH_SIDEA][15].inuse    = 1;
     settings.target[ATH_SIDEA][15].target   = 16.84;
     settings.target[ATH_SIDEA][15].duration = 20.0;
@@ -112,7 +120,7 @@ void atspanel_update(double dt) {
  *                                PUBLIC INTERFACE
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-void atspanel_ask(uint8_t side, uint8_t ask) {
+void atspanel_ask(uint8_t side, ATSP_ASK ask) {
     /* proccess needs */
     if (ask & ATSP_REFERENCE) { /* beeing asked to reference */
         /* TODO check for problems that might be imcompatible with referencing */
@@ -135,14 +143,31 @@ void atspanel_ask(uint8_t side, uint8_t ask) {
         //s->asking = 0;
         state[side].doing  = ATSP_OFF;
     }
+    if (ask & ATSP_SSAFE) { /* beeing asked to go auto mode */
+        state[side].doing  = ATSP_SSAFE;
+
+        /* break the motors */
+        athmotor_go(side, ATHM_BRAKE);
+        atspanel_free(side);
+
+        /* tell UI that this is in safe mode */
+    }
     if (ask & ATSP_SAUTO) { /* beeing asked to go auto mode */
 
         /* reset states after this big asking */
         //s->asking = 0;
-        state[side].doing  = ATSP_SAUTO;
+        state[side].doing = ATSP_SAUTO;
+        state[side].error = ATSP_ERR_DIRTY;
     }
     if (ask & ATSP_SMANUAL) { /* beeing asked to go auto mode */
         /* TODO check any inconvenience */
+        /* if already in manual, ignore the ask */
+        if (state[side].doing & ATSP_SMANUAL)
+            return;
+
+        /* turn of the light */
+        athrgb_flicker_off(ATHRGB_P1);
+        athrgb_fadeto(ATHRGB_P1, 0.0, 0.0, 0.0, 2.0, ATHRGB_RGB);
 
         /* reset env things we dunno if they changed */
         atspanel_inconsistent(side);
@@ -151,11 +176,11 @@ void atspanel_ask(uint8_t side, uint8_t ask) {
 
         /* reset states after this big asking */
         //s->asking = 0;
-        state[side].doing  = ATSP_SMANUAL;
+        state[side].doing = ATSP_SMANUAL;
     }
 }
 
-uint8_t atspanel_isdoing(uint8_t side, uint8_t ask) {
+uint8_t atspanel_isdoing(uint8_t side, ATSP_ASK ask) {
     return (state[side].doing & ask);
 }
 
@@ -256,12 +281,28 @@ void atspanel_inconsistent(uint8_t side) {
     }
 }
 
+void atspanel_adderror(uint8_t side, ATSP_ERR err) {
+    state[side].error = ATSP_ERR_DIRTY | err;
+}
+
+void atspanel_clearerror(uint8_t side, ATSP_ERR err) {
+    state[side].error &= ATSP_ERR_DIRTY | (~err);
+}
+
+uint8_t atspanel_checkerror(uint8_t side) {
+    return state[side].error;
+}
+
+uint8_t atspanel_erroring(uint8_t side) {
+    return state[side].erroring;
+}
+
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *                               PRIVATE FUNCTIONS
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 void init_panel(pstate * s, uint8_t side, uint8_t door, uint8_t paper) {
     s->doing = ATSP_OFF;
-    //s->asking = ATSP_SAUTO;
+    s->error = 0;
 
     s->side  = side;
     s->door  = door;
@@ -348,6 +389,7 @@ void update_panel(double dt, pstate * s) {
                 return;
             }
 
+
             /* do run! */
             if (s->aauto.wait <= 0.0) { /* time's over, get next! */
                 /* find next position */
@@ -360,9 +402,19 @@ void update_panel(double dt, pstate * s) {
                     ATHM_STICKY);
 
                 /* TODO light control : start moving */
-                athrgb_flicker_on(ATHRGB_P1);
-                athrgb_rgb(ATHRGB_P1, 0.0, 0.0, 0.0);
-                athrgb_fadeto(ATHRGB_P1, 1.0, 1.0,  1.0, 3.0, ATHRGB_RGB);
+                if (s->aauto.trg == 13) {
+                    athrgb_flicker_off(ATHRGB_P1);
+                    athrgb_fadeto(ATHRGB_P1, 0.0, 0.0, 0.0, 0.2, ATHRGB_RGB);
+                } else
+                if (s->aauto.trg == 15) {
+                    athrgb_flicker_off(ATHRGB_P1);
+                    athrgb_rgb(ATHRGB_P1, 0.2, 0.2, 0.2);
+                }
+                else {
+                    athrgb_flicker_on(ATHRGB_P1);
+                    athrgb_rgb(ATHRGB_P1, 0.0, 0.0, 0.0);
+                    athrgb_fadeto(ATHRGB_P1, 1.0, 1.0,  1.0, 2.0, ATHRGB_RGB);
+                }
                 //if (s->aauto.trg  == 9) {
                     s->aauto.edt = 0.0;
                     s->aauto.ei  = 0;
@@ -380,13 +432,16 @@ void update_panel(double dt, pstate * s) {
                     /* TODO light control : target after arrived */
                     if (s->aauto.wait > 1.0 && !s->aauto.ltoggle) { /* arrived */
                         athrgb_flicker_off(ATHRGB_P1);
-                        athrgb_rgb(ATHRGB_P1, 0.0, 0.0, 0.0);
-                        athrgb_fadeto(ATHRGB_P1, 1.0, 1.0,  1.0, 1.0, ATHRGB_RGB);
+                        //athrgb_rgb(ATHRGB_P1, 0.0, 0.0, 0.0);
+                        //athrgb_fadeto(ATHRGB_P1, 1.0, 1.0,  1.0, 1.0, ATHRGB_RGB);
+                        if (s->aauto.trg == 14) {
+                            athrgb_rgb(ATHRGB_P1, 1.0, 1.0, 1.0);
+                        }
                         s->aauto.ltoggle = 1;
                     } else
                     /* TODO light control : target before departure */
                     if (s->aauto.wait < 1.0 && s->aauto.ltoggle) { /* will departure */
-                        athrgb_fadeto(ATHRGB_P1, 0.0, 0.0,  0.0, 1.0, ATHRGB_RGB);
+                        athrgb_fadeto(ATHRGB_P1, 0.2, 0.2,  0.2, 1.0, ATHRGB_RGB);
                         s->aauto.ltoggle = 0;
                     }
 
@@ -428,7 +483,10 @@ void update_panel(double dt, pstate * s) {
                                 s->aauto.ei = 0;
                                 s->aauto.edt = 3.0;
                             }
-                        } else if (!s->aauto.ltoggle) {
+                        } if (s->aauto.trg == 14) {
+                            athrgb_rgb(ATHRGB_P1, 1.0, 1.0, 1.0);
+                        }
+                        else if (!s->aauto.ltoggle) {
                             athrgb_rgb(ATHRGB_P1, 0.0, 0.0, 0.0);
                             athrgb_fadeto(ATHRGB_P1, 1.0, 1.0,  1.0, 1.0, ATHRGB_RGB);
                             s->aauto.ltoggle = 1;
