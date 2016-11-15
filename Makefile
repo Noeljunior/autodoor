@@ -13,8 +13,10 @@ LFLAGS   = -lm #-lncurses
 SLOWMOT  = #sleep 0.2
 
 # PLATFORM SPECIFIC ATmega2560
-PS_TTY   = /dev/ttyUSB0
-PS_BR    = 57600
+#PS_TTY   = /dev/ttyUSB0
+PS_TTY   = usb
+PS_BR    = 115200
+#PS_BR    = 57600
 #PS_BR    = 9600
 #PS_CPU   = atmega328p
 PS_CPU   = atmega2560
@@ -24,21 +26,33 @@ PS_LD    = avr-gcc
 PS_CF    = -mmcu=${PS_CPU} -DF_CPU=${PS_FCPU} -ffunction-sections -fdata-sections -Os -Wall
 PS_LF    = -mmcu=${PS_CPU} -Wl,-Os -Wl,--gc-sections -Wl,-u,vfprintf -lprintf_flt -lm
 
-PS_BUILDS = ${OUT} ${OUT}.elf ${OUT}.hex
+PS_BUILDS = ${OUT} ${OUT}.elf ${OUT}.hex ${OUT}.eeprom.hex
 PS_SIZE   = 'avr-size'
 #PS_MFLASH = 30720
 #PS_MSRAM  = 2048
-PS_MFLASH = 253952
+#PS_MFLASH = 253952
+PS_MFLASH = 262144
 PS_MSRAM  = 8192
+PS_MEEP   = 4096
 
 define PS_RUN =
-    avrdude \
+    sudo avrdude \
+        -C '/etc/avrdude.conf'\
+        -p ${PS_CPU}\
+        -P ${PS_TTY}\
+        -c 'avrispmkII'\
+        -b ${PS_BR}\
+        -e\
+        -U 'flash:w:$(1).hex:i'
+endef
+define PS_EEPROM =
+    sudo avrdude \
         -C '/etc/avrdude.conf'\
         -p ${PS_CPU}\
         -P ${PS_TTY}\
         -c 'avrispmkII'\
         -D\
-        -U 'flash:w:$(1).hex:i'
+        -U eeprom:w:$(1).eeprom.hex
 endef
 #        -c 'arduino'\
 #        -b ${PS_BR}\
@@ -83,7 +97,7 @@ ${OUT}: $(addprefix ${BUILDOBJ}, $(OBJALL))
 	@${SLOWMOT}
 	@printf "\r${CYELLOW}Linked    ${CNONE}\n"
 	@printf ${CCYAN}
-	@./tootils/freespace ${BUILD}$@ ${PS_MFLASH} ${PS_MSRAM} ${PS_SIZE}
+	@./tootils/freespace ${BUILD}$@ ${PS_MFLASH} ${PS_MSRAM} ${PS_MEEP} ${PS_SIZE}
 	@printf ${CNONE}
 
 # call it a .elf file
@@ -95,6 +109,12 @@ ${OUT}.elf: ${OUT}
 ${OUT}.hex: ${OUT}.elf
 	@avr-objcopy -O ihex -R .eeprom ${BUILD}${OUT}.elf ${BUILD}${OUT}.hex
 
+
+#build the .eeprom.hex file
+${OUT}.eeprom.hex: ${OUT}.elf
+	@#avr-objcopy -j .eeprom -O ihex ${BUILD}${OUT}.elf ${BUILD}${OUT}.eeprom.hex
+	@avr-objcopy -j .eeprom --change-section-lma .eeprom=0 -O ihex ${BUILD}${OUT}.elf ${BUILD}${OUT}.eeprom.hex
+
 # clean a build
 clean:
 	@rm -rf ${BUILD}
@@ -102,6 +122,10 @@ clean:
 # run this build
 run: all
 	@$(call PS_RUN,${BUILD}${OUT})
+
+# run this build
+eeprom: ${OUT}.eeprom.hex
+	@$(call PS_EEPROM,${BUILD}${OUT})
 
 # the freshes
 fresh: clean all
