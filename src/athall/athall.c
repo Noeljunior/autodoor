@@ -1,7 +1,8 @@
 #include "ath.h"
 
 /* TODO
-    read pin analog ?
+    read pin analog!
+    dummy load if cycle is too slow
 */
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -17,8 +18,8 @@ double          dt      = 0.0;
 
 void athinit() {
     /* TODO EXPECTIONS */
-    PIN_DOUT(B7);
-    PIN_LOW(B7);
+    //PIN_DOUT(B7);
+    //PIN_LOW(B7);
 
     /* init modules */
     athtiming_init();

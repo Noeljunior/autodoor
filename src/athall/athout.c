@@ -61,20 +61,17 @@ ATH_UPL_DECLARE(waitout);
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 void athout_init() {
-    /* ATHOUT_LED1 */
-    ath_init_setmode(&outs[ATHOUT_LED1].pin, GALL(ATHOUT_LED1_PIN),
-        ATHP_OUTPUT | ATHP_SETLOW);
-    outinit(&outs[ATHOUT_LED1], DIGITAL);
-
-    /* ATHOUT_LED2 */
-    ath_init_setmode(&outs[ATHOUT_LED2].pin, GALL(ATHOUT_LED2_PIN),
-        ATHP_OUTPUT | ATHP_SETLOW);
-    outinit(&outs[ATHOUT_LED2], DIGITAL);
-
     /* ATHOUT_SPEAKER */
     ath_init_setmode(&outs[ATHOUT_SPEAKER].pin, GALL(ATHOUT_SPEAKER_PIN),
+        ATHP_OUTPUT);
+    ath_init_pwm(&outs[ATHOUT_SPEAKER].pin, ATHOUT_SPEAKER_PWM,
+        TOP_F_PS(ATHOUT_SPEAKER_FREQ_HZ, 1), 1);
+
+    /* ATHOUT_RELAY */
+    ath_init_setmode(&outs[ATHOUT_RELAY].pin, GALL(ATHOUT_RELAY_PIN),
         ATHP_OUTPUT | ATHP_SETLOW);
-    outinit(&outs[ATHOUT_SPEAKER], DIGITAL);
+    outinit(&outs[ATHOUT_RELAY], DIGITAL);
+
 }
 
 

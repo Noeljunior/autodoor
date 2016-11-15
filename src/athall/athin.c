@@ -70,14 +70,14 @@ void athin_init() {
     ath_init_setmode(&btns[ATHIN_RIGHT].pin, GALL(ATHIN_RIGHT_PIN),
         ATHP_INPUT | ATHP_SET_PULLUP | ATHP_INVERT);
 
-    /* ATHIN_DOORA */
-    btns[ATHIN_DOORA].mode = SWITCH;
-    ath_init_setmode(&btns[ATHIN_DOORA].pin, GALL(ATHIN_DOORA_PIN),
+    /* ATHIN_DOOR */
+    btns[ATHIN_DOOR].mode = SWITCH;
+    ath_init_setmode(&btns[ATHIN_DOOR].pin, GALL(ATHIN_DOOR_PIN),
         ATHP_INPUT | ATHP_SET_PULLUP | ATHP_INVERT);
 
-    /* ATHIN_PAPERA */
-    btns[ATHIN_PAPERA].mode = SWITCH;
-    ath_init_setmode(&btns[ATHIN_PAPERA].pin, GALL(ATHIN_PAPERA_PIN),
+    /* ATHIN_PAPER */
+    btns[ATHIN_PAPER].mode = SWITCH;
+    ath_init_setmode(&btns[ATHIN_PAPER].pin, GALL(ATHIN_PAPER_PIN),
         ATHP_INPUT | ATHP_UNSET_PULLUP | ATHP_INVERT);
 }
 

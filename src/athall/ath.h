@@ -186,6 +186,8 @@ void            athin_update();
  *                                      ATH:OUT
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /* PARAMETERS */
+#define ATHOUT_SPEAKER_FREQ_HZ      500L
+
 
 /* DECLARATIONS */
 void            athout_init();

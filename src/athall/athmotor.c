@@ -31,7 +31,6 @@ typedef enum STATE { UP, DOWN, STOP, BRAKE } STATE;
 typedef enum MODE { M_NONE, M_ONESHOT, M_STICKY, M_FREE } MODE;
 typedef struct motor {
     /* pins */
-    pin         pspeed;
     pin         pbreak;
     pin         pdirection;
     pin         pfault;
@@ -80,9 +79,6 @@ void athmotor_init() {
      */
 
     /* UP */
-    ath_init_setmode(&controla.mup.pspeed, GALL(ATHMOTOR_AUP_SPEED_PIN),
-        ATHP_OUTPUT | ATHP_SETLOW);
-
     ath_init_setmode(&controla.mup.pbreak, GALL(ATHMOTOR_AUP_BRAKE_PIN),
         ATHP_OUTPUT | ATHP_SETHIGH);
 
@@ -97,9 +93,6 @@ void athmotor_init() {
     ath_init_pwm(&controla.mup.ppwm, ATHMOTOR_AUP_PWM_PWM, TOP_F_PS(PWM_HZ, 1), 1);
 
     /* DOWN */
-    ath_init_setmode(&controla.mdown.pspeed, GALL(ATHMOTOR_ADOWN_SPEED_PIN),
-        ATHP_OUTPUT | ATHP_SETLOW);
-
     ath_init_setmode(&controla.mdown.pbreak, GALL(ATHMOTOR_ADOWN_BRAKE_PIN),
         ATHP_OUTPUT | ATHP_SETHIGH);
 
@@ -122,9 +115,39 @@ void athmotor_init() {
     /*
      *      SIDE B
      */
-    // TODO
     /* UP */
+    ath_init_setmode(&controlb.mup.pbreak, GALL(ATHMOTOR_BUP_BRAKE_PIN),
+        ATHP_OUTPUT | ATHP_SETHIGH);
+
+    ath_init_setmode(&controlb.mup.pdirection, GALL(ATHMOTOR_BUP_DIR_PIN),
+        ATHP_OUTPUT | ATHP_SETLOW);
+
+    ath_init_setmode(&controlb.mup.pfault, GALL(ATHMOTOR_BUP_FAULT_PIN),
+        ATHP_INPUT | ATHP_SETLOW);
+
+    ath_init_setmode(&controlb.mup.ppwm, GALL(ATHMOTOR_BUP_PWM_PIN),
+        ATHP_OUTPUT);
+    ath_init_pwm(&controlb.mup.ppwm, ATHMOTOR_BUP_PWM_PWM, TOP_F_PS(PWM_HZ, 1), 1);
+
     /* DOWN */
+    ath_init_setmode(&controlb.mdown.pbreak, GALL(ATHMOTOR_BDOWN_BRAKE_PIN),
+        ATHP_OUTPUT | ATHP_SETHIGH);
+
+    ath_init_setmode(&controlb.mdown.pdirection, GALL(ATHMOTOR_BDOWN_DIR_PIN),
+        ATHP_OUTPUT | ATHP_SETLOW);
+
+    ath_init_setmode(&controlb.mdown.pfault, GALL(ATHMOTOR_BUP_FAULT_PIN),
+        ATHP_INPUT | ATHP_SETLOW);
+
+    ath_init_setmode(&controlb.mdown.ppwm, GALL(ATHMOTOR_BDOWN_PWM_PIN),
+        ATHP_OUTPUT);
+    ath_init_pwm(&controlb.mdown.ppwm, ATHMOTOR_BDOWN_PWM_PWM, TOP_F_PS(PWM_HZ, 1), 1);
+
+    initcontrolor(controlers[ATHM_SIDEB]);
+
+    /* map position and rps to the controler */
+    controlers[ATHM_SIDEB]->dposition = athdecoder_getposition(ATHD_SIDEB);
+    controlers[ATHM_SIDEB]->drps      = athdecoder_getrps(ATHD_SIDEB);
 
 
 }

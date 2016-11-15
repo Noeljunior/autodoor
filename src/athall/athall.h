@@ -67,8 +67,8 @@ typedef enum    ATHIN {
                     ATHIN_DOWN,
                     ATHIN_LEFT,
                     ATHIN_RIGHT,
-                    ATHIN_DOORA,
-                    ATHIN_PAPERA,
+                    ATHIN_DOOR,
+                    ATHIN_PAPER,
                 ATHIN_MAX } ATHIN;
 #endif
 
@@ -93,13 +93,10 @@ uint8_t         athin_switchedon(uint8_t in);
 #ifndef TD_ATHOUT_H_
 #define TD_ATHOUT_H_
 typedef enum    ATHOUT {
-                    ATHOUT_LED1,
-                    ATHOUT_LED2,
                     ATHOUT_SPEAKER,
-                    ATHOUT_LIGHTR,
-                    ATHOUT_LIGHTG,
-                    ATHOUT_LIGHTB,
-                    ATHOUT_LIGHTRGB,
+                    ATHOUT_RELAY,
+                    ATHOUT_LCDBL,
+                    ATHOUT_LCDCONTRAST,
                 ATHOUT_MAX } ATHOUT;
 #endif
 

@@ -74,7 +74,7 @@ uint8_t     reference(pstate * s, double dt);
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 void atspanel_init() {
     /* init structure and state */
-    init_panel(state + ATH_SIDEA, ATH_SIDEA, ATHIN_DOORA, ATHIN_PAPERA);
+    init_panel(state + ATH_SIDEA, ATH_SIDEA, ATHIN_DOOR, ATHIN_PAPER);
     //init_panel(state + ATH_SIDEB, ATH_SIDEB, ATHIN_DOORB, ATHIN_PAPERB);
 
     /* init semaphore */
@@ -87,7 +87,7 @@ void atspanel_init() {
     /**/
     settings.target[ATH_SIDEA][13].inuse    = 1;
     settings.target[ATH_SIDEA][13].target   = 0.73;
-    settings.target[ATH_SIDEA][13].duration = 10.0;//30.0;
+    settings.target[ATH_SIDEA][13].duration = 30.0;
     settings.target[ATH_SIDEA][14].inuse    = 1;
     settings.target[ATH_SIDEA][14].target   = 8.77;
     settings.target[ATH_SIDEA][14].duration = 15.0;
@@ -409,11 +409,14 @@ void update_panel(double dt, pstate * s) {
                 if (s->aauto.trg == 15) {
                     athrgb_flicker_off(ATHRGB_P1);
                     athrgb_rgb(ATHRGB_P1, 0.2, 0.2, 0.2);
-                }
-                else {
+                } else
+                if (s->aauto.trg == 14) {
                     athrgb_flicker_on(ATHRGB_P1);
                     athrgb_rgb(ATHRGB_P1, 0.0, 0.0, 0.0);
                     athrgb_fadeto(ATHRGB_P1, 1.0, 1.0,  1.0, 2.0, ATHRGB_RGB);
+                } else {
+                    athrgb_flicker_off(ATHRGB_P1);
+                    athrgb_fadeto(ATHRGB_P1, 0.0, 0.0, 0.0, 0.2, ATHRGB_RGB);
                 }
                 //if (s->aauto.trg  == 9) {
                     s->aauto.edt = 0.0;
@@ -441,7 +444,9 @@ void update_panel(double dt, pstate * s) {
                     } else
                     /* TODO light control : target before departure */
                     if (s->aauto.wait < 1.0 && s->aauto.ltoggle) { /* will departure */
-                        athrgb_fadeto(ATHRGB_P1, 0.2, 0.2,  0.2, 1.0, ATHRGB_RGB);
+                        if (s->aauto.trg >= 13) {
+                            athrgb_fadeto(ATHRGB_P1, 0.2, 0.2,  0.2, 1.0, ATHRGB_RGB);
+                        }
                         s->aauto.ltoggle = 0;
                     }
 
@@ -484,13 +489,17 @@ void update_panel(double dt, pstate * s) {
                                 s->aauto.edt = 3.0;
                             }
                         } if (s->aauto.trg == 14) {
-                            athrgb_rgb(ATHRGB_P1, 1.0, 1.0, 1.0);
+                            if (s->aauto.ei == 0) {
+                                athrgb_rgb(ATHRGB_P1, 1.0, 1.0, 1.0);
+                                athrgb_fadeto(ATHRGB_P1, 1.0, 1.0, 1.0, 1.0, ATHRGB_RGB);
+                                s->aauto.ei++;
+                            }
                         }
-                        else if (!s->aauto.ltoggle) {
-                            athrgb_rgb(ATHRGB_P1, 0.0, 0.0, 0.0);
-                            athrgb_fadeto(ATHRGB_P1, 1.0, 1.0,  1.0, 1.0, ATHRGB_RGB);
-                            s->aauto.ltoggle = 1;
-                        }
+                        //else if (!s->aauto.ltoggle) {
+                        //    athrgb_rgb(ATHRGB_P1, 0.0, 0.0, 0.0);
+                        //    athrgb_fadeto(ATHRGB_P1, 1.0, 1.0,  1.0, 1.0, ATHRGB_RGB);
+                        //    s->aauto.ltoggle = 1;
+                        //}
                         
                     }
                 }
