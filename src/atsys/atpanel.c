@@ -43,9 +43,6 @@ typedef struct pstate {
         int8_t      dir;
         uint8_t     trg;
 
-        uint8_t     ltoggle;
-        double      edt;
-        uint8_t     ei;
     } aauto;
     /* referencing */
     struct  aref {
@@ -166,8 +163,8 @@ void atspanel_ask(uint8_t side, ATSP_ASK ask) {
             return;
 
         /* turn of the light */
-        athrgb_flicker_off(ATHRGB_P1);
-        athrgb_fadeto(ATHRGB_P1, 0.0, 0.0, 0.0, 2.0, ATHRGB_RGB);
+        //athrgb_flicker_off(ATHRGB_P1);
+        //athrgb_fadeto(ATHRGB_P1, 0.0, 0.0, 0.0, 2.0, ATHRGB_RGB);
 
         /* reset env things we dunno if they changed */
         atspanel_inconsistent(side);
@@ -401,27 +398,6 @@ void update_panel(double dt, pstate * s) {
                 athmotor_goto(s->side, s->trgs[s->aauto.trg].target,
                     ATHM_STICKY);
 
-                /* TODO light control : start moving */
-                if (s->aauto.trg == 13) {
-                    athrgb_flicker_off(ATHRGB_P1);
-                    athrgb_fadeto(ATHRGB_P1, 0.0, 0.0, 0.0, 0.2, ATHRGB_RGB);
-                } else
-                if (s->aauto.trg == 15) {
-                    athrgb_flicker_off(ATHRGB_P1);
-                    athrgb_rgb(ATHRGB_P1, 0.2, 0.2, 0.2);
-                } else
-                if (s->aauto.trg == 14) {
-                    athrgb_flicker_on(ATHRGB_P1);
-                    athrgb_rgb(ATHRGB_P1, 0.0, 0.0, 0.0);
-                    athrgb_fadeto(ATHRGB_P1, 1.0, 1.0,  1.0, 2.0, ATHRGB_RGB);
-                } else {
-                    athrgb_flicker_off(ATHRGB_P1);
-                    athrgb_fadeto(ATHRGB_P1, 0.0, 0.0, 0.0, 0.2, ATHRGB_RGB);
-                }
-                //if (s->aauto.trg  == 9) {
-                    s->aauto.edt = 0.0;
-                    s->aauto.ei  = 0;
-                //}
             } else { /* waiting 'til the next! */
                 if (!athmotor_targeted(s->side)) {
                     /* going to it... */
@@ -432,76 +408,7 @@ void update_panel(double dt, pstate * s) {
                     athlcd_printf(1, "[%2d] Prox %s", s->aauto.trg + 1,
                         ats_time_tos(s->aauto.wait, 1));
 
-                    /* TODO light control : target after arrived */
-                    if (s->aauto.wait > 1.0 && !s->aauto.ltoggle) { /* arrived */
-                        athrgb_flicker_off(ATHRGB_P1);
-                        //athrgb_rgb(ATHRGB_P1, 0.0, 0.0, 0.0);
-                        //athrgb_fadeto(ATHRGB_P1, 1.0, 1.0,  1.0, 1.0, ATHRGB_RGB);
-                        if (s->aauto.trg == 14) {
-                            athrgb_rgb(ATHRGB_P1, 1.0, 1.0, 1.0);
-                        }
-                        s->aauto.ltoggle = 1;
-                    } else
-                    /* TODO light control : target before departure */
-                    if (s->aauto.wait < 1.0 && s->aauto.ltoggle) { /* will departure */
-                        if (s->aauto.trg >= 13) {
-                            athrgb_fadeto(ATHRGB_P1, 0.2, 0.2,  0.2, 1.0, ATHRGB_RGB);
-                        }
-                        s->aauto.ltoggle = 0;
-                    }
 
-                    if (s->aauto.wait > 1.0) {
-                        s->aauto.edt -= dt;
-                        if (s->aauto.trg == 13) {
-                            if (s->aauto.ei == 24 && s->aauto.edt <= 0.0) {
-                                athrgb_fadeto(ATHRGB_P1, 1.0, 1.0, 0.0, 1.0, ATHRGB_RGB);
-                                s->aauto.ei++;
-                                s->aauto.edt = 1.5;
-                            } else
-                            if (s->aauto.ei == 25 && s->aauto.edt <= 0.0) {
-                                athrgb_fadeto(ATHRGB_P1, 1.0, 1.0, 1.0, 3.0, ATHRGB_RGB);
-                                s->aauto.ei = 0;
-                                s->aauto.edt = 5.0;
-                            } else
-                            if ((s->aauto.ei % 2) == 0 && s->aauto.edt <= 0.0) {
-                                athrgb_fadeto(ATHRGB_P1, 1.0, 0.0,  0.0, 0.08, ATHRGB_RGB);
-                                s->aauto.ei++; s->aauto.edt = 0.08;
-                            } else
-                            if ((s->aauto.ei % 2) == 1 && s->aauto.edt <= 0.0) {
-                                athrgb_fadeto(ATHRGB_P1, 0.0, 0.0,  1.0, 0.08, ATHRGB_RGB);
-                                s->aauto.ei++; s->aauto.edt = 0.08;
-                            }
-                        } else
-                        if (s->aauto.trg == 15) {
-                            if (s->aauto.ei == 0 && s->aauto.edt <= 0.0) {
-                                athrgb_fadeto(ATHRGB_P1, 0.0, 1.0, 1.0, 1.0, ATHRGB_RGB);
-                                s->aauto.ei++;
-                                s->aauto.edt = 2.0;
-                            } else
-                            if (s->aauto.ei == 1 && s->aauto.edt <= 0.0) {
-                                athrgb_fadeto(ATHRGB_P1, 1.0, 1.0,  1.0, 4.0, ATHRGB_RGB);
-                                s->aauto.ei++;
-                                s->aauto.edt = 6.0;
-                            } else
-                            if (s->aauto.ei == 2 && s->aauto.edt <= 0.0) {
-                                athrgb_fadeto(ATHRGB_P1, 1.0, 0.0, 0.0, 2.0, ATHRGB_RGB);
-                                s->aauto.ei = 0;
-                                s->aauto.edt = 3.0;
-                            }
-                        } if (s->aauto.trg == 14) {
-                            if (s->aauto.ei == 0) {
-                                athrgb_rgb(ATHRGB_P1, 1.0, 1.0, 1.0);
-                                athrgb_fadeto(ATHRGB_P1, 1.0, 1.0, 1.0, 1.0, ATHRGB_RGB);
-                                s->aauto.ei++;
-                            }
-                        }
-                        //else if (!s->aauto.ltoggle) {
-                        //    athrgb_rgb(ATHRGB_P1, 0.0, 0.0, 0.0);
-                        //    athrgb_fadeto(ATHRGB_P1, 1.0, 1.0,  1.0, 1.0, ATHRGB_RGB);
-                        //    s->aauto.ltoggle = 1;
-                        //}
-                        
-                    }
                 }
             }
         } else
@@ -536,8 +443,8 @@ void reference_init(pstate * s) {
 
     athlcd_printf(1, "{R} Referenciar");
 
-    athrgb_fadeto(ATHRGB_P1, 0.0, 0.0,  0.0, 1.0, ATHRGB_RGB);
-    athrgb_flicker_off(ATHRGB_P1);
+    //athrgb_fadeto(ATHRGB_P1, 0.0, 0.0,  0.0, 1.0, ATHRGB_RGB);
+    //athrgb_flicker_off(ATHRGB_P1);
 
     /* TODO TEST PORPUSES */
     //r->wait      = 2.0;

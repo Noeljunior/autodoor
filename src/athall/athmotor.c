@@ -112,42 +112,44 @@ void athmotor_init() {
     controlers[ATHM_SIDEA]->dposition = athdecoder_getposition(ATHD_SIDEA);
     controlers[ATHM_SIDEA]->drps      = athdecoder_getrps(ATHD_SIDEA);
 
+    athmotor_go(ATHM_SIDEA, ATHM_UP);
+
     /*
      *      SIDE B
      */
     /* UP */
-    ath_init_setmode(&controlb.mup.pbreak, GALL(ATHMOTOR_BUP_BRAKE_PIN),
-        ATHP_OUTPUT | ATHP_SETHIGH);
+    //ath_init_setmode(&controlb.mup.pbreak, GALL(ATHMOTOR_BUP_BRAKE_PIN),
+    //    ATHP_OUTPUT | ATHP_SETHIGH);
 
-    ath_init_setmode(&controlb.mup.pdirection, GALL(ATHMOTOR_BUP_DIR_PIN),
-        ATHP_OUTPUT | ATHP_SETLOW);
+    //ath_init_setmode(&controlb.mup.pdirection, GALL(ATHMOTOR_BUP_DIR_PIN),
+    //    ATHP_OUTPUT | ATHP_SETLOW);
 
-    ath_init_setmode(&controlb.mup.pfault, GALL(ATHMOTOR_BUP_FAULT_PIN),
-        ATHP_INPUT | ATHP_SETLOW);
+    //ath_init_setmode(&controlb.mup.pfault, GALL(ATHMOTOR_BUP_FAULT_PIN),
+    //    ATHP_INPUT | ATHP_SETLOW);
 
-    ath_init_setmode(&controlb.mup.ppwm, GALL(ATHMOTOR_BUP_PWM_PIN),
-        ATHP_OUTPUT);
-    ath_init_pwm(&controlb.mup.ppwm, ATHMOTOR_BUP_PWM_PWM, TOP_F_PS(PWM_HZ, 1), 1);
+    //ath_init_setmode(&controlb.mup.ppwm, GALL(ATHMOTOR_BUP_PWM_PIN),
+    //    ATHP_OUTPUT);
+    //ath_init_pwm(&controlb.mup.ppwm, ATHMOTOR_BUP_PWM_PWM, TOP_F_PS(PWM_HZ, 1), 1);
 
-    /* DOWN */
-    ath_init_setmode(&controlb.mdown.pbreak, GALL(ATHMOTOR_BDOWN_BRAKE_PIN),
-        ATHP_OUTPUT | ATHP_SETHIGH);
+    ///* DOWN */
+    //ath_init_setmode(&controlb.mdown.pbreak, GALL(ATHMOTOR_BDOWN_BRAKE_PIN),
+    //    ATHP_OUTPUT | ATHP_SETHIGH);
 
-    ath_init_setmode(&controlb.mdown.pdirection, GALL(ATHMOTOR_BDOWN_DIR_PIN),
-        ATHP_OUTPUT | ATHP_SETLOW);
+    //ath_init_setmode(&controlb.mdown.pdirection, GALL(ATHMOTOR_BDOWN_DIR_PIN),
+    //    ATHP_OUTPUT | ATHP_SETLOW);
 
-    ath_init_setmode(&controlb.mdown.pfault, GALL(ATHMOTOR_BUP_FAULT_PIN),
-        ATHP_INPUT | ATHP_SETLOW);
+    //ath_init_setmode(&controlb.mdown.pfault, GALL(ATHMOTOR_BUP_FAULT_PIN),
+    //    ATHP_INPUT | ATHP_SETLOW);
 
-    ath_init_setmode(&controlb.mdown.ppwm, GALL(ATHMOTOR_BDOWN_PWM_PIN),
-        ATHP_OUTPUT);
-    ath_init_pwm(&controlb.mdown.ppwm, ATHMOTOR_BDOWN_PWM_PWM, TOP_F_PS(PWM_HZ, 1), 1);
+    //ath_init_setmode(&controlb.mdown.ppwm, GALL(ATHMOTOR_BDOWN_PWM_PIN),
+    //    ATHP_OUTPUT);
+    //ath_init_pwm(&controlb.mdown.ppwm, ATHMOTOR_BDOWN_PWM_PWM, TOP_F_PS(PWM_HZ, 1), 1);
 
-    initcontrolor(controlers[ATHM_SIDEB]);
+    //initcontrolor(controlers[ATHM_SIDEB]);
 
-    /* map position and rps to the controler */
-    controlers[ATHM_SIDEB]->dposition = athdecoder_getposition(ATHD_SIDEB);
-    controlers[ATHM_SIDEB]->drps      = athdecoder_getrps(ATHD_SIDEB);
+    ///* map position and rps to the controler */
+    //controlers[ATHM_SIDEB]->dposition = athdecoder_getposition(ATHD_SIDEB);
+    //controlers[ATHM_SIDEB]->drps      = athdecoder_getrps(ATHD_SIDEB);
 
 
 }
@@ -259,6 +261,7 @@ void initcontrolor(controler * c) {
 }
 
 void controler_update(double dt, controler * c) {
+    athlcd_printf(1, "peido %.2f %d", c->tspeed, c->mode);
     uint8_t dobreak = 0;
     /* targeting */
     if (c->mode == M_ONESHOT || c->mode == M_STICKY/*c->target > 0.0*/) { /* stop if near target */
@@ -316,32 +319,32 @@ void controler_update(double dt, controler * c) {
     }
 
     /* paper limiting */
-    if ((*c->dposition - ATHMOTOR_LIMIT_DIST) < c->limit_start &&
-            (c->tspeed < 0.0)) {
-        double dist = *c->dposition - c->limit_start;
+    //if ((*c->dposition - ATHMOTOR_LIMIT_DIST) < c->limit_start &&
+    //        (c->tspeed < 0.0)) {
+    //    double dist = *c->dposition - c->limit_start;
 
-        c->tspeed = -ATHMOTOR_LIMIT_SPEED;
+    //    c->tspeed = -ATHMOTOR_LIMIT_SPEED;
 
-        if (dist < ATHMOTOR_LIMIT_STOP_DIST) {
-            c->state = c->tstate = BRAKE;
-            c->speed = c->tspeed = 0.0;
-            c->mode  = M_NONE;
-            //c->targeted = 1;
-        }
-    } else
-    if ((*c->dposition + ATHMOTOR_LIMIT_DIST) > c->limit_end &&
-            (c->tspeed > 0.0)) {
-        double dist = c->limit_end - *c->dposition;
+    //    if (dist < ATHMOTOR_LIMIT_STOP_DIST) {
+    //        c->state = c->tstate = BRAKE;
+    //        c->speed = c->tspeed = 0.0;
+    //        c->mode  = M_NONE;
+    //        //c->targeted = 1;
+    //    }
+    //} else
+    //if ((*c->dposition + ATHMOTOR_LIMIT_DIST) > c->limit_end &&
+    //        (c->tspeed > 0.0)) {
+    //    double dist = c->limit_end - *c->dposition;
 
-        c->tspeed = ATHMOTOR_LIMIT_SPEED;
+    //    c->tspeed = ATHMOTOR_LIMIT_SPEED;
 
-        if (dist < ATHMOTOR_LIMIT_STOP_DIST) {
-            c->state = c->tstate = BRAKE;
-            c->speed = c->tspeed = 0.0;
-            c->mode  = M_NONE;
-            //c->targeted = 1;
-        }
-    }
+    //    if (dist < ATHMOTOR_LIMIT_STOP_DIST) {
+    //        c->state = c->tstate = BRAKE;
+    //        c->speed = c->tspeed = 0.0;
+    //        c->mode  = M_NONE;
+    //        //c->targeted = 1;
+    //    }
+    //}
 
     /* speed-springing */
     double deltad = c->tspeed - c->speed;
@@ -489,6 +492,8 @@ void controler_update(double dt, controler * c) {
         ath_pin_pwm(&c->mdown.ppwm, ATHMOTOR_SPEED_STOP);
         ath_pin_set(&c->mdown.pbreak, ATH_HIGH);
     }
+    
+    
 }
 
 

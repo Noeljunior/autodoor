@@ -121,7 +121,7 @@ void atsui_init() {
         sstack.stack[i] = -1;
     }
 
-    atsui_changestate(ATSUI_AUTO);
+    atsui_changestate(ATSUI_MAIN);
     //atsui_changestate(ATSUI_FREECONTROL);
     //atsui_changestate(ATSUI_LIGHT);
 
@@ -169,9 +169,9 @@ double led_mode_blink1b[] = {0.05, 0.1, 0.05, 0.8};
 void s_auto_init() {
     athlcd_clear();
     athlcd_printf(0, "      AUTO");
-    athout_sequence(ATHOUT_LED1, led_mode_blink1a, 4, ATHOUT_REPEAT_YES);
-    athout_off(ATHOUT_LED2);
-    athout_sequence(ATHOUT_SPEAKER, led_mode_blink1b, 4, ATHOUT_REPEAT_NO_OFF);
+    //athout_sequence(ATHOUT_LED1, led_mode_blink1a, 4, ATHOUT_REPEAT_YES);
+    //athout_off(ATHOUT_LED2);
+    //athout_sequence(ATHOUT_SPEAKER, led_mode_blink1b, 4, ATHOUT_REPEAT_NO_OFF);
 
     atspanel_ask(ATH_SIDEA, ATSP_SAUTO);
     //atspanel_ask(ATH_SIDEB, ATSP_SAUTO);
@@ -214,8 +214,8 @@ void s_main_init() {
     athlcd_clear();
     athlcd_printf(0, "[MENU PRINCIPAL]");
 
-    athout_sequence(ATHOUT_LED1, led_mode_blink2a, 4, ATHOUT_REPEAT_YES);
-    athout_sequence(ATHOUT_LED2, led_mode_blink2b, 4, ATHOUT_REPEAT_YES);
+    //athout_sequence(ATHOUT_LED1, led_mode_blink2a, 4, ATHOUT_REPEAT_YES);
+    //athout_sequence(ATHOUT_LED2, led_mode_blink2b, 4, ATHOUT_REPEAT_YES);
 
     /* init svars */
     sv.m.selector = 0;
@@ -378,10 +378,19 @@ void s_freecontrol(double dt) {
 
     if (sv.f.mode == 0) { /* normal mode */
         athlcd_printf(0, "[L] Normal     %c", sv.f.slow ? '-' : ' ');
-        atspanel_hobble_disable(ats_wside());
-        atspanel_walk(ats_wside(), ATHIN_UP, ATHIN_DOWN, sv.f.slow);
+        //atspanel_hobble_disable(ats_wside());
+        //atspanel_walk(ats_wside(), ATHIN_UP, ATHIN_DOWN, sv.f.slow);
+    if (athin_clicked(ATHIN_UP) || athin_longclicked(ATHIN_UP)) {
+        athmotor_gos(ats_wside(), ATHM_UP, ATHM_NORMAL);
+    } else
+    if (athin_clicked(ATHIN_DOWN) || athin_longclicked(ATHIN_DOWN)) {
+        athmotor_gos(ats_wside(), ATHM_DOWN, ATHM_NORMAL);
+    }
+    if (athin_released(ATHIN_UP) || athin_released(ATHIN_DOWN)) {
+        //athmotor_go(ats_wside(), ATHM_BRAKE);
+    }
         if (athin_clicking(ATHIN_RIGHT) || athin_clicking(ATHIN_LEFT)) {
-            athmotor_go(ats_wside(), ATHM_BRAKE);
+            //athmotor_go(ats_wside(), ATHM_BRAKE);
         }
     } else
     if (sv.f.mode == 1) { /* hobble up */
@@ -401,8 +410,8 @@ void s_freecontrol(double dt) {
     }
 
 
-    athlcd_printf(1, "%6.2fr %5.2frps", athdecoder_position(ats_wside()),
-        athdecoder_rps(ats_wside()));
+    //athlcd_printf(1, "%6.2fr %5.2frps", athdecoder_position(ats_wside()),
+    //    athdecoder_rps(ats_wside()));
 
 }
 
@@ -590,12 +599,12 @@ void s_light_init() {
     
     sv.l.light = 0;
     
-    athrgb_fadeto(ATHRGB_P1, 1.0, 1.0, 1.0, 2.0, ATHRGB_RGB);
+    //athrgb_fadeto(ATHRGB_P1, 1.0, 1.0, 1.0, 2.0, ATHRGB_RGB);
 }
 
 void s_light_finish() {
-    athrgb_flicker_off(ATHRGB_P1);
-    athrgb_fadeto(ATHRGB_P1, 0.0, 0.0, 0.0, 2.0, ATHRGB_RGB);
+    //athrgb_flicker_off(ATHRGB_P1);
+    //athrgb_fadeto(ATHRGB_P1, 0.0, 0.0, 0.0, 2.0, ATHRGB_RGB);
 }
 
 void s_light(double dt) {
@@ -627,7 +636,7 @@ void s_light(double dt) {
 
     if (athin_clicked(ATHIN_OK)) {
         sv.l.light ^= 1;
-        athrgb_fadeto(ATHRGB_P1,(double) sv.l.light, (double) sv.l.light, (double) sv.l.light, 2.0, ATHRGB_RGB);
+        //athrgb_fadeto(ATHRGB_P1,(double) sv.l.light, (double) sv.l.light, (double) sv.l.light, 2.0, ATHRGB_RGB);
         athlcd_printf(1, "%.3f", (double) sv.l.light);
     }
 
@@ -656,8 +665,8 @@ void s_light(double dt) {
     //athrgb_hsl(ATHRGB_P1, l_hsl[0], l_hsl[1], l_hsl[2]);
     //athrgb_rgb(ATHRGB_P1, 1, 1, 1);
 
-    athrgb_fadeto(ATHRGB_P1,
-        sv.l.hsl[0], sv.l.hsl[1], sv.l.hsl[2], 0.5, ATHRGB_HSL);
+    //athrgb_fadeto(ATHRGB_P1,
+    //    sv.l.hsl[0], sv.l.hsl[1], sv.l.hsl[2], 0.5, ATHRGB_HSL);
     //athout_dc(ATHOUT_LIGHTR, 0.5*LEDEXP(sv.l.d[0], 0.01, 1));
     //athout_dc(ATHOUT_LIGHTG, LEDEXP(sv.l.d[1], 0.001, 1));
     //athout_dc(ATHOUT_LIGHTB, LEDEXP(sv.l.d[2], 2, 1));

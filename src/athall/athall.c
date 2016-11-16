@@ -18,17 +18,20 @@ double          dt      = 0.0;
 
 void athinit() {
     /* TODO EXPECTIONS */
-    //PIN_DOUT(B7);
-    //PIN_LOW(B7);
+    //PIN_DOUT(B4);
+    //PIN_HIGH(B4);
+
+
+
 
     /* init modules */
     athtiming_init();
     athlcd_init();
     athin_init();
     athout_init();
-    athrgb_init();
+    //athrgb_init();
     athmotor_init();
-    athdecoder_init();
+    //athdecoder_init();
 
 }
 
@@ -53,13 +56,13 @@ void athupdate() {
     athlcd_update(dt);
     athin_update(dt);
     athout_update(dt);
-    athrgb_update(dt);
+    //athrgb_update(dt);
     athmotor_update(dt);
-    athdecoder_update(dt);
+    //athdecoder_update(dt);
 //athlcd_printf(0, "     AUTO");
     /* show fps */
     //athlcd_printf(1, "FPS: %f", dt);
-    _delay_ms(7);
+    _delay_ms(20);
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -255,7 +258,8 @@ void ath_init_pwm(pin * p, ATHP_C tcounter, uint16_t top, uint16_t prescaler) {
             break;
         /* Timer/Counter2 */
         case ATHP_PWM_2A: case ATHP_PWM_2B:
-            /* TODO */
+            TCCR2A = (TCCR2A & ~0x03) | (_BV(WGM21) | _BV(WGM20));
+            TCCR2B = (TCCR2B & ~0x0F) | (PS);
             top = 255;
             break;
         /* Timer/Counter[1345] */
@@ -263,22 +267,22 @@ void ath_init_pwm(pin * p, ATHP_C tcounter, uint16_t top, uint16_t prescaler) {
             TCCR1A = (TCCR1A & ~0x03) | TCCRnA;
             TCCR1B = (TCCR1B & ~0x1F) | TCCRnB;
             TCCR1C = (TCCR1C & ~0xE0) | TCCRnC;
-            ICR1   = top;
+            if (top != 0) ICR1   = top;
         case ATHP_PWM_3A: case ATHP_PWM_3B: case ATHP_PWM_3C:
             TCCR3A = (TCCR3A & ~0x03) | TCCRnA;
             TCCR3B = (TCCR3B & ~0x1F) | TCCRnB;
             TCCR3C = (TCCR3C & ~0xE0) | TCCRnC;
-            ICR3   = top;
+            if (top != 0) ICR3   = top;
         case ATHP_PWM_4A: case ATHP_PWM_4B: case ATHP_PWM_4C:
             TCCR4A = (TCCR4A & ~0x03) | TCCRnA;
             TCCR4B = (TCCR4B & ~0x1F) | TCCRnB;
             TCCR4C = (TCCR4C & ~0xE0) | TCCRnC;
-            ICR4   = top;
+            if (top != 0) ICR4   = top;
         case ATHP_PWM_5A: case ATHP_PWM_5B: case ATHP_PWM_5C:
             TCCR5A = (TCCR5A & ~0x03) | TCCRnA;
             TCCR5B = (TCCR5B & ~0x1F) | TCCRnB;
             TCCR5C = (TCCR5C & ~0xE0) | TCCRnC;
-            ICR5   = top;
+            if (top != 0) ICR5   = top;
             break;
         case ATHP_PWM_MAX: default: return;
     }
@@ -295,9 +299,9 @@ void ath_init_pwm(pin * p, ATHP_C tcounter, uint16_t top, uint16_t prescaler) {
         case ATHP_PWM_1A: TCCR1A = (TCCR1A & ~0xC0) | _BV(COM1A1); break;
         case ATHP_PWM_1B: TCCR1A = (TCCR1A & ~0x30) | _BV(COM1B1); break;
         case ATHP_PWM_1C: TCCR1A = (TCCR1A & ~0x0C) | _BV(COM1C1); break;
-        /* TODO Timer/Counter2 */
-        case ATHP_PWM_2A: /*TCCR2A = (TCCR2A & ~0xC0) | _BV(COM2A1);*/ break;
-        case ATHP_PWM_2B: /*TCCR2A = (TCCR2A & ~0x30) | _BV(COM2B1);*/ break;
+        /* Timer/Counter2 */
+        case ATHP_PWM_2A: TCCR2A = (TCCR2A & ~0xC0) | _BV(COM2A1); break;
+        case ATHP_PWM_2B: TCCR2A = (TCCR2A & ~0x30) | _BV(COM2B1); break;
         /* Timer/Counter3 */
         case ATHP_PWM_3A: TCCR3A = (TCCR3A & ~0xC0) | _BV(COM3A1); break;
         case ATHP_PWM_3B: TCCR3A = (TCCR3A & ~0x30) | _BV(COM3B1); break;
@@ -313,7 +317,7 @@ void ath_init_pwm(pin * p, ATHP_C tcounter, uint16_t top, uint16_t prescaler) {
         case ATHP_PWM_MAX: default: return;
     }
 
-    /* TODO if to invert logic */
+    /* if to invert logic */
     if (p->inv) {
         switch (tcounter) {
             /* TODO Timer/Counter0 */
@@ -323,9 +327,9 @@ void ath_init_pwm(pin * p, ATHP_C tcounter, uint16_t top, uint16_t prescaler) {
             case ATHP_PWM_1A: TCCR1A |= _BV(COM1A0); break;
             case ATHP_PWM_1B: TCCR1A |= _BV(COM1B0); break;
             case ATHP_PWM_1C: TCCR1A |= _BV(COM1C0); break;
-            /* TODO Timer/Counter2 */
-            case ATHP_PWM_2A: /*TCCR2A = (TCCR2A & ~0xC0) | _BV(COM2A1);*/ break;
-            case ATHP_PWM_2B: /*TCCR2A = (TCCR2A & ~0x30) | _BV(COM2B1);*/ break;
+            /* Timer/Counter2 */
+            case ATHP_PWM_2A: TCCR2A |= _BV(COM2A0); break;
+            case ATHP_PWM_2B: TCCR2A |= _BV(COM2B0); break;
             /* Timer/Counter3 */
             case ATHP_PWM_3A: TCCR3A |= _BV(COM3A0); break;
             case ATHP_PWM_3B: TCCR3A |= _BV(COM3B0); break;
@@ -344,14 +348,14 @@ void ath_init_pwm(pin * p, ATHP_C tcounter, uint16_t top, uint16_t prescaler) {
 
     /* set comprator register */
     switch (tcounter) {
-        /* TODO Timer/Counter0 */
+        /* Timer/Counter0 */
         case ATHP_PWM_0A: p->pwm.pwm8  = &OCR0A; break;
         case ATHP_PWM_0B: p->pwm.pwm8  = &OCR0B; break;
         /* Timer/Counter1 */
         case ATHP_PWM_1A: p->pwm.pwm16 = &OCR1A; break;
         case ATHP_PWM_1B: p->pwm.pwm16 = &OCR1B; break;
         case ATHP_PWM_1C: p->pwm.pwm16 = &OCR1C; break;
-        /* TODO Timer/Counter2 */
+        /* imer/Counter2 */
         case ATHP_PWM_2A: p->pwm.pwm8  = &OCR2A; break;
         case ATHP_PWM_2B: p->pwm.pwm8  = &OCR2B; break;
         /* Timer/Counter3 */

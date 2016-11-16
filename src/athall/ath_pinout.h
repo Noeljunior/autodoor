@@ -38,7 +38,7 @@
 #define ATHOUT_RELAY_PIN            K6
 #define ATHOUT_LCDBL_PIN            H6
 #define ATHOUT_LCDBL_PWM            ATHP_PWM_4B
-#define ATHOUT_LCDCONTRAST_PIN      B3
+#define ATHOUT_LCDCONTRAST_PIN      B4
 #define ATHOUT_LCDCONTRAST_PWM      ATHP_PWM_2A
 
 
@@ -56,22 +56,22 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *                                      ATH:MOTOR
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-#define ATHMOTOR_AUP_BRAKE_PIN      B3  /* SIDE A-UP */
-#define ATHMOTOR_AUP_DIR_PIN        L0
-#define ATHMOTOR_AUP_FAULT_PIN      L1
-#define ATHMOTOR_AUP_PWM_PIN        L5
-#define ATHMOTOR_AUP_PWM_PWM        ATHP_PWM_5C
+#define ATHMOTOR_AUP_BRAKE_PIN      B0  /* SIDE A-UP */
+#define ATHMOTOR_AUP_DIR_PIN        B1
+#define ATHMOTOR_AUP_FAULT_PIN      B2
+#define ATHMOTOR_AUP_PWM_PIN        L4
+#define ATHMOTOR_AUP_PWM_PWM        ATHP_PWM_5B
 #define ATHMOTOR_ADOWN_BRAKE_PIN    L7  /* SIDE A-DOWN */
 #define ATHMOTOR_ADOWN_DIR_PIN      G0
 #define ATHMOTOR_ADOWN_FAULT_PIN    G1
 #define ATHMOTOR_ADOWN_PWM_PIN      E4
 #define ATHMOTOR_ADOWN_PWM_PWM      ATHP_PWM_3B
 
-#define ATHMOTOR_BUP_BRAKE_PIN      B0  /* SIDE B-UP */
-#define ATHMOTOR_BUP_DIR_PIN        B1
-#define ATHMOTOR_BUP_FAULT_PIN      B2
-#define ATHMOTOR_BUP_PWM_PIN        L4
-#define ATHMOTOR_BUP_PWM_PWM        ATHP_PWM_5B
+#define ATHMOTOR_BUP_BRAKE_PIN      B3  /* SIDE B-UP */
+#define ATHMOTOR_BUP_DIR_PIN        L0
+#define ATHMOTOR_BUP_FAULT_PIN      L1
+#define ATHMOTOR_BUP_PWM_PIN        L5
+#define ATHMOTOR_BUP_PWM_PWM        ATHP_PWM_5C
 #define ATHMOTOR_BDOWN_BRAKE_PIN    L2  /* SIDE B-DOWN */
 #define ATHMOTOR_BDOWN_DIR_PIN      G2
 #define ATHMOTOR_BDOWN_FAULT_PIN    L6

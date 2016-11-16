@@ -72,6 +72,15 @@ void athout_init() {
         ATHP_OUTPUT | ATHP_SETLOW);
     outinit(&outs[ATHOUT_RELAY], DIGITAL);
 
+
+    /* ATHOUT_LCDCONTRAST */
+    ath_init_setmode(&outs[ATHOUT_LCDCONTRAST].pin, GALL(ATHOUT_LCDCONTRAST_PIN),
+        ATHP_OUTPUT);
+    ath_init_pwm(&outs[ATHOUT_LCDCONTRAST].pin, ATHOUT_LCDCONTRAST_PWM, 0, 1);
+
+    ath_pin_pwm(&outs[ATHOUT_LCDCONTRAST].pin, 0.35);
+
+
 }
 
 
@@ -83,9 +92,9 @@ void athout_update(double dt) {
 
     for (i = 0; i < ATHOUT_MAX; i++) {
         if (outs[i].mode == PWM) {
-            outupdate_pwm(&outs[i], dt);
+            //outupdate_pwm(&outs[i], dt);
         } else {
-            outupdate(&outs[i], dt);
+            //outupdate(&outs[i], dt);
         }
     }
 

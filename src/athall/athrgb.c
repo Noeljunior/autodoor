@@ -1,4 +1,6 @@
 #include "ath.h"
+#ifdef ATH_USE_RGB
+//#endif
 
 /* TODO
     - 
@@ -225,10 +227,5 @@ void rgb_update(double dt, rgb * p) {
 
 }
 
-
-
-
-
-
-
+#endif
 
