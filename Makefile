@@ -36,7 +36,7 @@ PS_MSRAM  = 8192
 PS_MEEP   = 4096
 
 define PS_RUN =
-    sudo avrdude \
+    avrdude \
         -C '/etc/avrdude.conf'\
         -p ${PS_CPU}\
         -P ${PS_TTY}\
@@ -46,7 +46,7 @@ define PS_RUN =
         -U 'flash:w:$(1).hex:i'
 endef
 define PS_EEPROM =
-    sudo avrdude \
+    avrdude \
         -C '/etc/avrdude.conf'\
         -p ${PS_CPU}\
         -P ${PS_TTY}\
@@ -87,6 +87,7 @@ ${BUILDOBJ}%.o: ${SRC}%.c
 	@printf "${CGREEN}${CBOLD}Compiling $<...${CNONE}\r"
 	@mkdir -p "$(@D)"
 	@${PS_CC} ${PS_CF} -DCPUARCH=${PS_CPU} -DVERSION=${VERSION} -o $@ -c $<
+	@FCOMP=$(shell date +%s.%6N)
 	@${SLOWMOT}
 	@printf "\r${CGREEN}Compiled $<     ${CNONE}\n"
 
