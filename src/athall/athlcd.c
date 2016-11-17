@@ -3,9 +3,11 @@
 #define FPS         30.0
 
 /* TODO
-    * implement some kind of autoscroll
+    * implement some kind of vertical autoscroll
     * update one line at a time; do not update both if one didn't change
     * clear lcd more efficient
+    * use new pin API
+    * implement some kind of output buffer
 */
 
 

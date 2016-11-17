@@ -261,10 +261,11 @@ void initcontrolor(controler * c) {
 }
 
 void controler_update(double dt, controler * c) {
-    athlcd_printf(1, "peido %.2f %d", c->tspeed, c->mode);
+    //athlcd_printf(1, "peido %.2f %.2f", c->tspeed, c->speed);
     uint8_t dobreak = 0;
     /* targeting */
-    if (c->mode == M_ONESHOT || c->mode == M_STICKY/*c->target > 0.0*/) { /* stop if near target */
+    //if (c->mode == M_ONESHOT || c->mode == M_STICKY/*c->target > 0.0*/) { /* stop if near target */
+    if (0) {
         double dist = fabs(*c->dposition - c->target);
 
         /* TODO speed limit based on remaining distance */

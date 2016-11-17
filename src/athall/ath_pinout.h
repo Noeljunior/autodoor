@@ -36,7 +36,7 @@
 #define ATHOUT_SPEAKER_PIN          B6
 #define ATHOUT_SPEAKER_PWM          ATHP_PWM_1A
 #define ATHOUT_RELAY_PIN            K6
-#define ATHOUT_LCDBL_PIN            H6
+#define ATHOUT_LCDBL_PIN            H4
 #define ATHOUT_LCDBL_PWM            ATHP_PWM_4B
 #define ATHOUT_LCDCONTRAST_PIN      B4
 #define ATHOUT_LCDCONTRAST_PWM      ATHP_PWM_2A
@@ -83,9 +83,13 @@
  *                                      ATH:DECODER
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 #define ATHDECODER_BYTE_PIN         A0
-#define ATHDECODER_SSO_PIN          C2  /* [SELECT1 SELECT2 OE] */
+//#define ATHDECODER_SSO_PIN          C2  /* [SELECT1-C2 SELECT2-C3 OE-C4] */
+#define ATHDECODER_OEN_PIN          C4
+#define ATHDECODER_SEL1_PIN         C2
+#define ATHDECODER_SEL2_PIN         C3
 #define ATHDECODER_EN1_PIN          C6
 #define ATHDECODER_EN2_PIN          C7
+#define ATHDECODER_XY_PIN           C5
 #define ATHDECODER_RESETX_PIN       C0
 #define ATHDECODER_RESETY_PIN       C1
 

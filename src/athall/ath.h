@@ -12,6 +12,7 @@
 #include <stdarg.h>
 #include <inttypes.h>
 
+
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *
  *                                  HW MACRO HELPERS
@@ -42,6 +43,9 @@
 #define BIT(PIN)                    R1_BIT(PIN)
 #define R1_BIT(PIN)                 PIN##_NUMBER
 
+/* Get's the bit mask of the pin PIN */
+#define BITMASK(PIN)                (0x01 << BIT(PIN))
+
 /* Get's the DDRn/PORTn/PINn of the pin PIN */
 #define GDDR(PIN)                   GETREG(DDR, PIN)
 #define GPORT(PIN)                  GETREG(PORT, PIN)
@@ -71,6 +75,9 @@
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 #include "athall.h"
 #include "ath_pinout.h"
+
+//#define ATH_USE_RGB
+
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *                                        ATH
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -197,13 +204,14 @@ void            athout_update(double dt);
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *                                      ATH:RGB
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+#ifdef ATH_USE_RGB
 /* PARAMETERS */
 #define ATHRGB_PWM_FREQ_HZ          500L
 
 /* DECLARATIONS */
 void            athrgb_init();
 void            athrgb_update(double dt);
-
+#endif
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *                                      ATH:MOTOR
@@ -214,7 +222,7 @@ void            athrgb_update(double dt);
 #define ATHMOTOR_CALIB_MUP          1.0
 #define ATHMOTOR_CALIB_MDOWN        0.8
 #define ATHMOTOR_STRENGTH_PERC      0.75
-#define ATHMOTOR_SPEED_FACTOR       0.4
+#define ATHMOTOR_SPEED_FACTOR       0.75
 #define ATHMOTOR_SPEED_ABSMAX       0.9
 #define ATHMOTOR_SPEED_ABSMIN       0.05
 #define ATHMOTOR_SPEED_START        0.15
@@ -234,9 +242,14 @@ void            athmotor_update(double dt);
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *                                      ATH:DECODER
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* CONFIGS */
+#define ATHDECODER_DOUBLE_SIDEX ATH_SIDEB
+#define ATHDECODER_DOUBLE_SIDEY ATH_SIDEA
+
 /* PARAMETERS */
-#define ATHDECODER_PPRA         2000
-#define ATHDECODER_PPRB         2000
+#define ATHDECODER_SINGLE_PPR   2000
+#define ATHDECODER_DOUBLE_PPR   (200 * (13.7))
+#define ATHDECODER_DOUBLE_MULT  2
 
 /* DECLARATIONS */
 void            athdecoder_init();

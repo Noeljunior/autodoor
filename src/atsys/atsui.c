@@ -121,8 +121,9 @@ void atsui_init() {
         sstack.stack[i] = -1;
     }
 
-    atsui_changestate(ATSUI_MAIN);
-    //atsui_changestate(ATSUI_FREECONTROL);
+    atspanel_ask(ATH_SIDEA, ATSP_SMANUAL);
+    //atsui_changestate(ATSUI_MAIN);
+    atsui_changestate(ATSUI_FREECONTROL);
     //atsui_changestate(ATSUI_LIGHT);
 
 }
@@ -349,7 +350,7 @@ void s_reference(double dt) {
 /* * * * * * * * * * * * FREECONTROL * * * * * * * * * * * */
 void s_freecontrol_init() {
     athlcd_clear();
-    athlcd_printf(0, "CONTROLO LIVRE");
+    //athlcd_printf(0, "CONTROLO LIVRE");
 
     sv.f.mode = 0;
     sv.f.slow = 0;
@@ -360,12 +361,13 @@ void s_freecontrol_finish() {
     atspanel_hobble_disable(ats_wside());
     athmotor_go(ats_wside(), ATHM_BRAKE);
 }
-
+int asd = 0;
 void s_freecontrol(double dt) {
     if (athin_clicked(ATHIN_CANCEL)) {
         atsui_changestate(ATSUI_MAIN);
         return;
     }
+
 
     if (athin_clicking(ATHIN_RIGHT)) sv.f.mode++;
     if (athin_clicking(ATHIN_LEFT))  sv.f.mode--;
@@ -377,21 +379,9 @@ void s_freecontrol(double dt) {
 
 
     if (sv.f.mode == 0) { /* normal mode */
-        athlcd_printf(0, "[L] Normal     %c", sv.f.slow ? '-' : ' ');
-        //atspanel_hobble_disable(ats_wside());
-        //atspanel_walk(ats_wside(), ATHIN_UP, ATHIN_DOWN, sv.f.slow);
-    if (athin_clicked(ATHIN_UP) || athin_longclicked(ATHIN_UP)) {
-        athmotor_gos(ats_wside(), ATHM_UP, ATHM_NORMAL);
-    } else
-    if (athin_clicked(ATHIN_DOWN) || athin_longclicked(ATHIN_DOWN)) {
-        athmotor_gos(ats_wside(), ATHM_DOWN, ATHM_NORMAL);
-    }
-    if (athin_released(ATHIN_UP) || athin_released(ATHIN_DOWN)) {
-        //athmotor_go(ats_wside(), ATHM_BRAKE);
-    }
-        if (athin_clicking(ATHIN_RIGHT) || athin_clicking(ATHIN_LEFT)) {
-            //athmotor_go(ats_wside(), ATHM_BRAKE);
-        }
+        //athlcd_printf(0, "[L] Normal     %c", sv.f.slow ? '-' : ' ');
+        atspanel_hobble_disable(ats_wside());
+        atspanel_walk(ats_wside(), ATHIN_UP, ATHIN_DOWN, sv.f.slow);
     } else
     if (sv.f.mode == 1) { /* hobble up */
         athlcd_printf(0, "[L] Superior   %c", sv.f.slow ? '-' : ' ');
@@ -412,6 +402,8 @@ void s_freecontrol(double dt) {
 
     //athlcd_printf(1, "%6.2fr %5.2frps", athdecoder_position(ats_wside()),
     //    athdecoder_rps(ats_wside()));
+    //athlcd_printf(0, "%ld:%ld", athdecoder_read(0), athdecoder_read(1));
+    //athlcd_printf(1, "y %ld", athdecoder_read(1));
 
 }
 

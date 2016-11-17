@@ -18,9 +18,8 @@ double          dt      = 0.0;
 
 void athinit() {
     /* TODO EXPECTIONS */
-    //PIN_DOUT(B4);
-    //PIN_HIGH(B4);
-
+    //PIN_DOUT(ATHOUT_LCDBL_PIN);
+    //PIN_HIGH(ATHOUT_LCDBL_PIN);
 
 
 
@@ -31,7 +30,8 @@ void athinit() {
     athout_init();
     //athrgb_init();
     athmotor_init();
-    //athdecoder_init();
+    athdecoder_init();
+    
 
 }
 
@@ -58,7 +58,7 @@ void athupdate() {
     athout_update(dt);
     //athrgb_update(dt);
     athmotor_update(dt);
-    //athdecoder_update(dt);
+    athdecoder_update(dt);
 //athlcd_printf(0, "     AUTO");
     /* show fps */
     //athlcd_printf(1, "FPS: %f", dt);

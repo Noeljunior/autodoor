@@ -74,11 +74,18 @@ void athout_init() {
 
 
     /* ATHOUT_LCDCONTRAST */
+    ath_init_setmode(&outs[ATHOUT_LCDBL].pin, GALL(ATHOUT_LCDBL_PIN),
+        ATHP_OUTPUT);
+    ath_init_pwm(&outs[ATHOUT_LCDBL].pin, ATHOUT_LCDBL_PWM, TOP_F_PS(500ul, 1), 1);
+
+    ath_pin_pwm(&outs[ATHOUT_LCDBL].pin, 0.8);
+
+    /* ATHOUT_LCDCONTRAST */
     ath_init_setmode(&outs[ATHOUT_LCDCONTRAST].pin, GALL(ATHOUT_LCDCONTRAST_PIN),
         ATHP_OUTPUT);
     ath_init_pwm(&outs[ATHOUT_LCDCONTRAST].pin, ATHOUT_LCDCONTRAST_PWM, 0, 1);
 
-    ath_pin_pwm(&outs[ATHOUT_LCDCONTRAST].pin, 0.35);
+    ath_pin_pwm(&outs[ATHOUT_LCDCONTRAST].pin, 0.25);
 
 
 }
@@ -92,9 +99,9 @@ void athout_update(double dt) {
 
     for (i = 0; i < ATHOUT_MAX; i++) {
         if (outs[i].mode == PWM) {
-            //outupdate_pwm(&outs[i], dt);
+            outupdate_pwm(&outs[i], dt);
         } else {
-            //outupdate(&outs[i], dt);
+            outupdate(&outs[i], dt);
         }
     }
 
