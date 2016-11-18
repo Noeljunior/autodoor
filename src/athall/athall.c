@@ -105,7 +105,7 @@ void ath_pin_init(pin * p, volatile uint8_t *ddr, volatile uint8_t *port,
     /* compute useful mask */
     p->mask = (1 << p->bit);
 }
-
+/* A B C D E F K L H J G */
 void ath_pin_setmode(pin * p, ATHP_M mode) {
     uint8_t m = mode & 0x07;
 

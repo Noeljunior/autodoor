@@ -121,9 +121,9 @@ void atsui_init() {
         sstack.stack[i] = -1;
     }
 
-    atspanel_ask(ATH_SIDEA, ATSP_SMANUAL);
-    //atsui_changestate(ATSUI_MAIN);
-    atsui_changestate(ATSUI_FREECONTROL);
+    //atsui_changestate(ATSUI_AUTO);
+    atsui_changestate(ATSUI_MAIN);
+    //atsui_changestate(ATSUI_FREECONTROL);
     //atsui_changestate(ATSUI_LIGHT);
 
 }
@@ -132,6 +132,8 @@ void atsui_init() {
 void atsui_update(double dt) {
     /* run the selected ui state */
     (*updatestates[sstack.stack[sstack.now]]) (dt);
+    
+    //athlcd_printf(0, "%7.3f|%7.3f", athdecoder_position(0), athdecoder_rps(0));
 }
 
 void atsui_changestate(ATSUI_M s) {
@@ -170,12 +172,11 @@ double led_mode_blink1b[] = {0.05, 0.1, 0.05, 0.8};
 void s_auto_init() {
     athlcd_clear();
     athlcd_printf(0, "      AUTO");
-    //athout_sequence(ATHOUT_LED1, led_mode_blink1a, 4, ATHOUT_REPEAT_YES);
-    //athout_off(ATHOUT_LED2);
-    //athout_sequence(ATHOUT_SPEAKER, led_mode_blink1b, 4, ATHOUT_REPEAT_NO_OFF);
+
+    ats_setwside(ATH_NOSIDE);
 
     atspanel_ask(ATH_SIDEA, ATSP_SAUTO);
-    //atspanel_ask(ATH_SIDEB, ATSP_SAUTO);
+    atspanel_ask(ATH_SIDEB, ATSP_SAUTO);
 
     /* init svars */
     sv.a.state = 0;
@@ -188,7 +189,7 @@ void s_auto_finish() {
 
     /* stop panels from auto running */
     atspanel_ask(ATH_SIDEA, ATSP_SMANUAL);
-    //atspanel_ask(ATH_SIDEB, ATSP_SMANUAL);
+    atspanel_ask(ATH_SIDEB, ATSP_SMANUAL);
 }
 
 void s_auto(double dt) {
@@ -199,10 +200,21 @@ void s_auto(double dt) {
     }
 
 
-    if (atspanel_isdoing(ATH_SIDEA, ATSP_AREADY)) {
-        athlcd_printf(0, "    AUTO: OK");
-    } else {
-        athlcd_printf(0, "       AUTO");
+    //if (atspanel_isdoing(ATH_SIDEA, ATSP_AREADY)) {
+    //    athlcd_printf(0, "    AUTO: OK");
+    //} else {
+    //    athlcd_printf(0, "       AUTO");
+    //}
+
+
+    else {
+        //[----------------]
+        //[01/12 AUTO 01/12]
+        //[0.1s   OK   0.1s]
+
+        athlcd_printf(1, "%2d/%2d AUTO %2d/%2d",
+            0, atspanel_counttrgs_useful(ATH_SIDEA),
+            0, atspanel_counttrgs_useful(ATH_SIDEB));
     }
 
 }
@@ -215,17 +227,12 @@ void s_main_init() {
     athlcd_clear();
     athlcd_printf(0, "[MENU PRINCIPAL]");
 
-    //athout_sequence(ATHOUT_LED1, led_mode_blink2a, 4, ATHOUT_REPEAT_YES);
-    //athout_sequence(ATHOUT_LED2, led_mode_blink2b, 4, ATHOUT_REPEAT_YES);
-
     /* init svars */
     sv.m.selector = 0;
 
     /* set panels in manual mode */
-    //atspanel_ask(ATH_SIDEA, ATSP_SMANUAL);
-    //atspanel_ask(ATH_SIDEB, ATSP_SMANUAL);
-
-    //athout_dc(ATHOUT_LIGHTR, 0.7);
+    atspanel_ask(ATH_SIDEA, ATSP_SMANUAL);
+    atspanel_ask(ATH_SIDEB, ATSP_SMANUAL);
 
 }
 
@@ -255,6 +262,35 @@ void s_main(double dt) {
         sv.m.selector = -1;
         return;
     }
+
+    /* check and ask for each panel to config */
+    if (ats_wside() < 0) { /* no side selected */
+        if (athin_clicking(ATHIN_RIGHT)) sv.m.selector++;
+        if (athin_clicking(ATHIN_LEFT))  sv.m.selector--;
+
+        if (sv.m.selector < 0) sv.m.selector = 2 - 1;
+        sv.m.selector = abs(sv.m.selector) % (2);
+
+        switch (sv.m.selector) {
+            case 0: athlcd_printf(1, "Side A");
+                if (athin_clicked(ATHIN_OK)) {
+                    ats_setwside(ATH_SIDEA);
+                    sv.m.selector = 0;
+                    return;
+                }
+                break;
+            case 1: athlcd_printf(1, "Side B");
+                if (athin_clicked(ATHIN_OK)) {
+                    ats_setwside(ATH_SIDEB);
+                    sv.m.selector = 0;
+                    return;
+                }
+                break;
+        }
+
+        return;
+    }
+
 
     if (athin_clicking(ATHIN_RIGHT)) sv.m.selector++;
     if (athin_clicking(ATHIN_LEFT))  sv.m.selector--;
@@ -300,6 +336,8 @@ void s_main(double dt) {
             }
             break;
     }
+
+    //athlcd_printf(1, "%6.2f|%6.2f", athdecoder_position(0), athdecoder_position(1));
 }
 
 /* * * * * * * * * * * * REFERENCE * * * * * * * * * * * */
@@ -331,6 +369,7 @@ void s_reference(double dt) {
     if (sv.r.selector < 0) sv.r.selector = 2 - 1;
     sv.r.selector = abs(sv.r.selector) % (2);
 
+
     switch (sv.r.selector) {
         case 0:
             athlcd_printf(1, "> iniciar");
@@ -350,7 +389,7 @@ void s_reference(double dt) {
 /* * * * * * * * * * * * FREECONTROL * * * * * * * * * * * */
 void s_freecontrol_init() {
     athlcd_clear();
-    //athlcd_printf(0, "CONTROLO LIVRE");
+    athlcd_printf(0, "CONTROLO LIVRE");
 
     sv.f.mode = 0;
     sv.f.slow = 0;
@@ -379,7 +418,7 @@ void s_freecontrol(double dt) {
 
 
     if (sv.f.mode == 0) { /* normal mode */
-        //athlcd_printf(0, "[L] Normal     %c", sv.f.slow ? '-' : ' ');
+        athlcd_printf(0, "[L] Normal     %c", sv.f.slow ? '-' : ' ');
         atspanel_hobble_disable(ats_wside());
         atspanel_walk(ats_wside(), ATHIN_UP, ATHIN_DOWN, sv.f.slow);
     } else
@@ -400,10 +439,8 @@ void s_freecontrol(double dt) {
     }
 
 
-    //athlcd_printf(1, "%6.2fr %5.2frps", athdecoder_position(ats_wside()),
-    //    athdecoder_rps(ats_wside()));
-    //athlcd_printf(0, "%ld:%ld", athdecoder_read(0), athdecoder_read(1));
-    //athlcd_printf(1, "y %ld", athdecoder_read(1));
+    athlcd_printf(1, "%6.2fr %5.2frps", athdecoder_position(ats_wside()),
+        athdecoder_rps(ats_wside()));
 
 }
 

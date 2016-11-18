@@ -15,7 +15,7 @@ typedef struct syssettings {
 } syssettings;
 syssettings settings;
 
-ATHE_EEP(syssettings, ee_settings) = {0};
+//ATHE_EEP(syssettings, ee_settings) = {0};
 
 
 
@@ -25,7 +25,6 @@ typedef struct pstate {
     ATSP_ASK        doing;
 
     ATSP_ERR        error;
-    double          erroring;
 
     uint8_t         side;
     uint8_t         door;
@@ -58,7 +57,7 @@ typedef struct pstate {
 
 } pstate;
 pstate state[ATH_SIDES] = {0};
-semaphore locksem;
+//semaphore locksem;
 
 void        init_panel(pstate * s, uint8_t side, uint8_t door, uint8_t paper);
 void        update_panel(double dt, pstate * s);
@@ -71,36 +70,37 @@ uint8_t     reference(pstate * s, double dt);
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 void atspanel_init() {
     /* init structure and state */
-    init_panel(state + ATH_SIDEA, ATH_SIDEA, ATHIN_DOOR, ATHIN_PAPER);
-    //init_panel(state + ATH_SIDEB, ATH_SIDEB, ATHIN_DOORB, ATHIN_PAPERB);
+    init_panel(&state[ATH_SIDEA], ATH_SIDEA, ATHIN_DOOR, ATHIN_PAPER);
+    init_panel(&state[ATH_SIDEB], ATH_SIDEB, ATHIN_DOOR, ATHIN_PAPER);
 
     /* init semaphore */
-    ath_seminit(&locksem);
+    //ath_seminit(&locksem);
 
     /* initalize motors state */
 
 
     /* postitions test */
-    /**/
-    settings.target[ATH_SIDEA][13].inuse    = 1;
-    settings.target[ATH_SIDEA][13].target   = 0.73;
-    settings.target[ATH_SIDEA][13].duration = 30.0;
-    settings.target[ATH_SIDEA][14].inuse    = 1;
-    settings.target[ATH_SIDEA][14].target   = 8.77;
-    settings.target[ATH_SIDEA][14].duration = 15.0;
-    settings.target[ATH_SIDEA][15].inuse    = 1;
-    settings.target[ATH_SIDEA][15].target   = 16.84;
-    settings.target[ATH_SIDEA][15].duration = 20.0;
-    
-    /*settings.target[ATH_SIDEA][10].inuse    = 1;
-    settings.target[ATH_SIDEA][10].target   = 12.0;
-    settings.target[ATH_SIDEA][10].duration = 1.0;
-    settings.target[ATH_SIDEA][11].inuse    = 1;
-    settings.target[ATH_SIDEA][11].target   = 12.0;
-    settings.target[ATH_SIDEA][11].duration = 1.0;
-    settings.target[ATH_SIDEA][12].inuse    = 1;
-    settings.target[ATH_SIDEA][12].target   = 12.0;
-    settings.target[ATH_SIDEA][12].duration = 1.0;*/
+    settings.target[ATH_SIDEA][0].inuse    = 1;
+    settings.target[ATH_SIDEA][0].target   = 0.73;
+    settings.target[ATH_SIDEA][0].duration = 10.0;
+    settings.target[ATH_SIDEA][1].inuse    = 1;
+    settings.target[ATH_SIDEA][1].target   = 8.77;
+    settings.target[ATH_SIDEA][1].duration = 15.0;
+    settings.target[ATH_SIDEA][2].inuse    = 1;
+    settings.target[ATH_SIDEA][2].target   = 16.84;
+    settings.target[ATH_SIDEA][2].duration = 8.0;
+
+    /* postitions test */
+    settings.target[ATH_SIDEB][0].inuse    = 1;
+    settings.target[ATH_SIDEB][0].target   = 2.0;
+    settings.target[ATH_SIDEB][0].duration = 0.75;
+    settings.target[ATH_SIDEB][1].inuse    = 1;
+    settings.target[ATH_SIDEB][1].target   = 7.0;
+    settings.target[ATH_SIDEB][1].duration = 15.0;
+    settings.target[ATH_SIDEB][2].inuse    = 1;
+    settings.target[ATH_SIDEB][2].target   = 13.0;
+    settings.target[ATH_SIDEB][2].duration = 8.0;
+
 
 }
 
@@ -162,10 +162,6 @@ void atspanel_ask(uint8_t side, ATSP_ASK ask) {
         if (state[side].doing & ATSP_SMANUAL)
             return;
 
-        /* turn of the light */
-        //athrgb_flicker_off(ATHRGB_P1);
-        //athrgb_fadeto(ATHRGB_P1, 0.0, 0.0, 0.0, 2.0, ATHRGB_RGB);
-
         /* reset env things we dunno if they changed */
         atspanel_inconsistent(side);
 
@@ -200,10 +196,11 @@ uint8_t atspanel_counttrgs_active(atsp_target * ts) {
     return c;
 }
 
-uint8_t atspanel_counttrgs_useful(atsp_target * ts) {
+uint8_t atspanel_counttrgs_useful(uint8_t side) {
     uint8_t c = 0, i;
     for (i = 0; i < ATSP_MAXTARGETS; i++) {
-        if (ts[i].inuse && ts[i].duration >= 1.0) c++;
+        if (state[side].trgs[i].inuse &&
+            state[side].trgs[i].duration >= 1.0) c++;
     }
     return c;
 }
@@ -278,21 +275,31 @@ void atspanel_inconsistent(uint8_t side) {
     }
 }
 
-void atspanel_adderror(uint8_t side, ATSP_ERR err) {
+void atspanel_error_add(uint8_t side, ATSP_ERR err) {
     state[side].error = ATSP_ERR_DIRTY | err;
 }
 
-void atspanel_clearerror(uint8_t side, ATSP_ERR err) {
+void atspanel_error_clear(uint8_t side, ATSP_ERR err) {
     state[side].error &= ATSP_ERR_DIRTY | (~err);
+    if (state[side].error == ATSP_ERR_DIRTY)
+        state[side].error = 0;
 }
 
-uint8_t atspanel_checkerror(uint8_t side) {
+uint8_t atspanel_error_check(uint8_t side, ATSP_ERR err) {
+    return (state[side].error & err);
+}
+
+uint8_t atspanel_error_erroring(uint8_t side) {
     return state[side].error;
 }
 
-uint8_t atspanel_erroring(uint8_t side) {
-    return state[side].erroring;
+void atspanel_error_clearall(uint8_t side) {
+    return state[side].error = 0;
 }
+
+
+
+
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *                               PRIVATE FUNCTIONS
@@ -330,14 +337,41 @@ uint8_t getnexti_greedy(atsp_target * t, int8_t i, int8_t *dir) {
 
 
 void update_panel(double dt, pstate * s) {
+
+    /* check and mark errors: MOTOR TODO */
+    //if (0) {
+    //    atspanel_error_add(s->side, ATSP_ERR_MOTOR);
+    //} else {
+    //    atspanel_error_clear(s->side, ATSP_ERR_MOTOR);
+    //}
+
     /* do what is suposed to be doing */
     if (s->doing & ATSP_OFF) { /* stop motors */
         athmotor_go(s->side, ATHM_STOP | ATHM_HARD);
     } else {
         if (s->doing & ATSP_SAUTO) { /* AUTO MODE */
+            /* check and mark errors: DOOR */
+            if (athin_switchedon(s->door)) {
+                atspanel_error_add(s->side, ATSP_ERR_DOOR);
+            } else {
+                atspanel_error_clear(s->side, ATSP_ERR_DOOR);
+            }
+            /* check and mark errors: PAPER */
+            if (athin_switchedon(s->paper)) {
+                atspanel_error_add(s->side, ATSP_ERR_PAPER);
+            } else {
+                atspanel_error_clear(s->side, ATSP_ERR_PAPER);
+            }
+            /* check and mark errors: TARGETS */
+            if (atspanel_counttrgs_useful(s->side) < 1) {
+                atspanel_error_add(s->side, ATSP_ERR_NOTRGS);
+            } else {
+                atspanel_error_clear(s->side, ATSP_ERR_NOTRGS);
+            }
+
             if (!(s->doing & ATSP_AREADY)) {
                 /* check number of papers */
-                if (atspanel_counttrgs_useful(s->trgs) < 1) {
+                if (atspanel_counttrgs_useful(s->side) < 1) {
                 
                     athlcd_printf(1, "Sem folhas defs");
                     return;
@@ -347,6 +381,7 @@ void update_panel(double dt, pstate * s) {
                     athmotor_go(s->side, ATHM_BRAKE);
                     s->aauto.wfd = 3.0;
                     athlcd_printf(1, "Porta aberta...");
+                    atspanel_error_add(s->side, ATSP_ERR_DOOR);
                     atspanel_inconsistent(s->side);
                     return;
                 } else
@@ -442,27 +477,11 @@ void reference_init(pstate * s) {
     r->mismatch  = 1;
 
     athlcd_printf(1, "{R} Referenciar");
-
-    //athrgb_fadeto(ATHRGB_P1, 0.0, 0.0,  0.0, 1.0, ATHRGB_RGB);
-    //athrgb_flicker_off(ATHRGB_P1);
-
-    /* TODO TEST PORPUSES */
-    //r->wait      = 2.0;
 }
 
 uint8_t reference(pstate * s, double dt) {
     struct aref * r = &s->aref;
     if (r->wait >= 0.0) r->wait -= dt;
-
-    /* TODO TEST PORPUSES */
-    //if (r->wait > 0.0) {
-    //    athlcd_printf(1, "A cagar...");
-    //} else {
-    //    athmotor_set_limits(s->side, 0, 0);
-    //    r->state     = -1;
-    //    return 0;
-    //}
-    //return 1;
 
     if (r->state  == 0) { /* init sequence */
         athdecoder_reset(s->side); /* reset decoder */

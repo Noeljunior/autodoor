@@ -29,6 +29,7 @@ typedef struct semaphore {
 } semaphore;
 #endif
 
+#define         ATH_NOSIDE              -1
 #define         ATH_SIDEA               0
 #define         ATH_SIDEB               1
 #define         ATH_SIDES               2
@@ -144,8 +145,8 @@ void            HSLtoRGB(double h, double s, double l, double *rgb);
  *                                      ATH:MOTOR
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 #define         ATHM_NORMAL             1.0
-#define         ATHM_FAST               1.2
-#define         ATHM_SLOW               0.5
+#define         ATHM_FAST               1.1
+#define         ATHM_SLOW               0.8
 
 #define         ATHM_ONESHOT            0
 #define         ATHM_STICKY             1
@@ -193,6 +194,9 @@ uint8_t         athmotor_targeted(uint8_t side);
 void            athmotor_set_limits(uint8_t side, double start, double end);
 void            athmotor_unset_limits(uint8_t side);
 uint8_t         athmotor_islimited(uint8_t side);
+void            athmotor_set_dirs(uint8_t a_up, uint8_t a_down, uint8_t b_up,
+                                uint8_t b_down);
+
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *                                      ATH:DECODER

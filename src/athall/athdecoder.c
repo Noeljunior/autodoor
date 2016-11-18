@@ -7,7 +7,6 @@
 
 #define FREQUENCY       30.0
 
-
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *                               PRIVATE DECLARATIONS
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -45,8 +44,8 @@ ATH_UPL_DECLARE(wait);
 void athdecoder_init() {
     /* init the decoder */
     dec_init_d(decs,
-        (ATHDECODER_DOUBLE_PPR * ATHDECODER_DOUBLE_MULT) / 2,
-        (ATHDECODER_DOUBLE_PPR * ATHDECODER_DOUBLE_MULT) / 2);
+        (ATHDECODER_DOUBLE_PPR * ATHDECODER_DOUBLE_MULT),
+        (ATHDECODER_DOUBLE_PPR * ATHDECODER_DOUBLE_MULT));
 }
 
 void athdecoder_update(double dt) {
@@ -95,6 +94,12 @@ double * athdecoder_getrps(uint8_t side) {
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 void computevalues(decoder * d, uint32_t now, double dt) {
+    uint32_t dabs = abs(((int32_t) now) - ((int32_t) d->decoded));
+
+    if (dabs < 100 && d->diff < 100) {
+        now = d->decoded;
+    }
+
     uint32_t old = d->decoded;
     d->decoded = now;
 
@@ -106,7 +111,7 @@ void computevalues(decoder * d, uint32_t now, double dt) {
     d->rps      = (((int32_t) d->diff) / dt) / (double) d->ppr;
 }
 
-/* * * * * * * * * * * * * * * * *      DOUBLE       * * * * * * * * * * * * */
+/* * * * * * * * * * * * * * * * *     HCTL2032      * * * * * * * * * * * * */
 #define NONE_D              (BITMASK(ATHDECODER_OEN_PIN))
 #define MSB1_D              (BITMASK(ATHDECODER_SEL2_PIN))
 #define MSB2_D              (BITMASK(ATHDECODER_SEL1_PIN) |\
@@ -135,8 +140,8 @@ void dec_init_d(decoder ** d, uint32_t ppra, uint32_t pprb) {
         BITMASK(ATHDECODER_SEL2_PIN))) | NONE_D;
 
     /* set x and y decs */
-    d[0]->xy = 0;
-    d[1]->xy = 1;
+    d[ATHDECODER_2032_SIDEX]->xy = 0;
+    d[ATHDECODER_2032_SIDEY]->xy = 1;
 
     /* reset counters */
     dec_reset_d(d[0]);
@@ -149,7 +154,7 @@ void dec_init_d(decoder ** d, uint32_t ppra, uint32_t pprb) {
 }
 
 void dec_reset_d(decoder * d) {
-    if (!d->xy) {
+    if (d->xy) {
         PIN_LOW(ATHDECODER_RESETX_PIN);
         _delay_us(RESET_DELAY_D);
         PIN_HIGH(ATHDECODER_RESETX_PIN);
@@ -219,10 +224,11 @@ void dec_read_d(decoder * d, double dt) {
     /* exit */
     GPORT(ATHDECODER_OEN_PIN) = pb | NONE_D;
 
-    if (!d->xy) { /* x axis */
-        athlcd_printf(0, "%d: %ld, %02x", d->xy, val, pb);
-    } else {     /* y axis */
-        athlcd_printf(1, "%d: %ld, %02x", d->xy, val, GPORT(ATHDECODER_OEN_PIN));
+    if (!d->xy && ATHDECODER_2032_INVERTX) { /* x axis */
+        val = (uint32_t) -((int32_t) val);
+    }
+    if (d->xy && ATHDECODER_2032_INVERTY) {  /* y axis */
+        val = (uint32_t) -((int32_t) val);
     }
 
     /* update computed results */

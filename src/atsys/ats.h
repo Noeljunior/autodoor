@@ -11,7 +11,8 @@
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 #include "atsys.h"
 
-uint8_t         ats_wside();
+void            ats_setwside(int8_t wside);
+int8_t          ats_wside();
 char *          ats_time_tos(double t, uint8_t hp);
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -40,7 +41,7 @@ typedef enum    ATSP_ERR {
                     ATSP_ERR_DOOR     = (1 << 2), /* door opened */
                     ATSP_ERR_MOTOR    = (1 << 3), /* motor error */
                     ATSP_ERR_PLENMIS  = (1 << 4), /* a new reference mismatch the eeprom */
-                    ATSP_ERR_NOTRGS   = (1 << 5), /* a new reference mismatch the eeprom */
+                    ATSP_ERR_NOTRGS   = (1 << 5), /* no targets defined */
                 } ATSP_ERR;
 #endif
 #ifndef TD_ATSP_S_
@@ -53,7 +54,7 @@ typedef struct atsp_target { /* TODO day percentagem viewed */
 #endif
 
 /* CONFIG */
-#define         ATSP_MAXTARGETS         16
+#define         ATSP_MAXTARGETS         5
 
 /* DECLARATIONS */
 void            atspanel_init();
@@ -65,7 +66,7 @@ uint8_t         atspanel_mismatched(uint8_t side);
 atsp_target *   atspanel_getrefstmp(uint8_t side);
 atsp_target *   atspanel_getrefs(uint8_t side);
 uint8_t         atspanel_counttrgs_active(atsp_target * ts);
-uint8_t         atspanel_counttrgs_useful(atsp_target * ts);
+uint8_t         atspanel_counttrgs_useful(uint8_t side);
 void            atspanel_copytrgs(atsp_target * src, atsp_target * dst);
 void            atspanel_savetargets(uint8_t side);
 
@@ -80,10 +81,11 @@ uint8_t         atspanel_opened(uint8_t side);
 uint8_t         atspanel_torn(uint8_t side);
 void            atspanel_inconsistent(uint8_t side);
 
-void            atspanel_adderror(uint8_t side, ATSP_ERR err);
-void            atspanel_clearerror(uint8_t side, ATSP_ERR err);
-uint8_t         atspanel_checkerror(uint8_t side);
-uint8_t         atspanel_erroring(uint8_t side);
+void            atspanel_error_add(uint8_t side, ATSP_ERR err);
+void            atspanel_error_clear(uint8_t side, ATSP_ERR err);
+uint8_t         atspanel_error_check(uint8_t side, ATSP_ERR err);
+uint8_t         atspanel_error_erroring(uint8_t side);
+void            atspanel_error_clearall(uint8_t side);
 
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *

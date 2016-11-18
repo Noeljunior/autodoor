@@ -216,16 +216,22 @@ void            athrgb_update(double dt);
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *                                      ATH:MOTOR
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* CONFIGS */
+#define ATHMOTOR_A_UP_DIR           0
+#define ATHMOTOR_A_DOWN_DIR         1
+#define ATHMOTOR_B_UP_DIR           1
+#define ATHMOTOR_B_DOWN_DIR         0
+
 /* PARAMETERS */
-#define ATHMOTOR_CALIB_UPF          1.15
+#define ATHMOTOR_CALIB_UPF          1.1
 #define ATHMOTOR_CALIB_DPF          1.0
 #define ATHMOTOR_CALIB_MUP          1.0
-#define ATHMOTOR_CALIB_MDOWN        0.8
+#define ATHMOTOR_CALIB_MDOWN        1.0
 #define ATHMOTOR_STRENGTH_PERC      0.75
-#define ATHMOTOR_SPEED_FACTOR       0.75
+#define ATHMOTOR_SPEED_FACTOR       0.70
 #define ATHMOTOR_SPEED_ABSMAX       0.9
-#define ATHMOTOR_SPEED_ABSMIN       0.05
-#define ATHMOTOR_SPEED_START        0.15
+#define ATHMOTOR_SPEED_ABSMIN       0.30
+#define ATHMOTOR_SPEED_START        0.30
 #define ATHMOTOR_SPEED_STOP         0.0
 #define ATHMOTOR_SPEED_BRAKE        0.5
 #define ATHMOTOR_SPEED_ACCEL        3.5
@@ -243,13 +249,15 @@ void            athmotor_update(double dt);
  *                                      ATH:DECODER
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /* CONFIGS */
-#define ATHDECODER_DOUBLE_SIDEX ATH_SIDEB
-#define ATHDECODER_DOUBLE_SIDEY ATH_SIDEA
+#define ATHDECODER_2032_SIDEX   ATH_SIDEA
+#define ATHDECODER_2032_SIDEY   ATH_SIDEB
+#define ATHDECODER_2032_INVERTX 0
+#define ATHDECODER_2032_INVERTY 1
 
 /* PARAMETERS */
 #define ATHDECODER_SINGLE_PPR   2000
 #define ATHDECODER_DOUBLE_PPR   (200 * (13.7))
-#define ATHDECODER_DOUBLE_MULT  2
+#define ATHDECODER_DOUBLE_MULT  4
 
 /* DECLARATIONS */
 void            athdecoder_init();

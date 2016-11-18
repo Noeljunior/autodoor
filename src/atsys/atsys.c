@@ -1,6 +1,9 @@
 #include "ats.h"
 
 char time_tos_tmp[10];
+int8_t  workingside = -1;
+
+
 
 void atsinit() {
 
@@ -24,10 +27,15 @@ void atsupdate() {
     atsui_update(dt);
 }
 
-
-uint8_t ats_wside() {
-    return ATH_SIDEA;
+void ats_setwside(int8_t wside) {
+    workingside = wside;
 }
+
+int8_t ats_wside() {
+    return workingside;
+}
+
+
 
 char * ats_time_tos(double t, uint8_t hp) {
     if (t >= 3600.0) {       /* hours */
