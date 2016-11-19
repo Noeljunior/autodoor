@@ -42,6 +42,7 @@ typedef enum    ATSP_ERR {
                     ATSP_ERR_MOTOR    = (1 << 3), /* motor error */
                     ATSP_ERR_PLENMIS  = (1 << 4), /* a new reference mismatch the eeprom */
                     ATSP_ERR_NOTRGS   = (1 << 5), /* no targets defined */
+                    ATSP_ERR_NOREF    = (1 << 6), /* no reference */
                 } ATSP_ERR;
 #endif
 #ifndef TD_ATSP_S_
@@ -63,10 +64,14 @@ void            atspanel_update(double dt);
 void            atspanel_ask(uint8_t side, ATSP_ASK ask);
 uint8_t         atspanel_isdoing(uint8_t side, ATSP_ASK ask);
 uint8_t         atspanel_mismatched(uint8_t side);
+double          atspanel_getlatestart(uint8_t side);
 atsp_target *   atspanel_getrefstmp(uint8_t side);
 atsp_target *   atspanel_getrefs(uint8_t side);
 uint8_t         atspanel_counttrgs_active(atsp_target * ts);
 uint8_t         atspanel_counttrgs_useful(uint8_t side);
+double          atspanel_get_nextjump(uint8_t side);
+uint8_t         atspanel_get_actualtrg(uint8_t side);
+uint8_t         atspanel_is_targeted(uint8_t side);
 void            atspanel_copytrgs(atsp_target * src, atsp_target * dst);
 void            atspanel_savetargets(uint8_t side);
 

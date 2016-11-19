@@ -2,6 +2,7 @@
 
 /* TODO
     - read analog
+    - implement some kind of global error and panel error
 */
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -78,7 +79,7 @@ void athin_init() {
     /* ATHIN_PAPER */
     btns[ATHIN_PAPER].mode = SWITCH;
     ath_init_setmode(&btns[ATHIN_PAPER].pin, GALL(ATHIN_PAPER_PIN),
-        ATHP_INPUT | ATHP_UNSET_PULLUP | ATHP_INVERT);
+        ATHP_INPUT | ATHP_SET_PULLUP | ATHP_INVERT);
 }
 
 

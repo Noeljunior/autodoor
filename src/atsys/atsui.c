@@ -76,6 +76,7 @@ typedef union _svars_u {
     /* AUTO */
     struct _sa {
         uint8_t     state;
+        uint8_t     utrgs[ATH_SIDES];
     } a;
     /* MAIN */
     struct _sm {
@@ -121,8 +122,8 @@ void atsui_init() {
         sstack.stack[i] = -1;
     }
 
-    //atsui_changestate(ATSUI_AUTO);
-    atsui_changestate(ATSUI_MAIN);
+    atsui_changestate(ATSUI_AUTO);
+    //atsui_changestate(ATSUI_MAIN);
     //atsui_changestate(ATSUI_FREECONTROL);
     //atsui_changestate(ATSUI_LIGHT);
 
@@ -180,6 +181,10 @@ void s_auto_init() {
 
     /* init svars */
     sv.a.state = 0;
+
+    /* get the usefull targets */
+    sv.a.utrgs[ATH_SIDEA] = atspanel_counttrgs_useful(ATH_SIDEA);
+    sv.a.utrgs[ATH_SIDEB] = atspanel_counttrgs_useful(ATH_SIDEB);
 }
 
 void s_auto_finish() {
@@ -199,22 +204,80 @@ void s_auto(double dt) {
         return;
     }
 
+    if (athin_pressed(ATHIN_OK) && athin_pressed(ATHIN_CANCEL)) {
+        athlcd_printf(0, "   Getting out  ");
+        athlcd_printf(1, "       ...      ");
+        return;
+    }
 
-    //if (atspanel_isdoing(ATH_SIDEA, ATSP_AREADY)) {
-    //    athlcd_printf(0, "    AUTO: OK");
-    //} else {
-    //    athlcd_printf(0, "       AUTO");
-    //}
+    /* global errors */
+    if (!atspanel_isdoing(ATH_SIDEA, ATSP_SAUTO) ||
+        !atspanel_isdoing(ATH_SIDEB, ATSP_SAUTO)) {
+        athlcd_printf(0, "    UNKNOWN     ");
+        athlcd_printf(1, "     ERROR      ");
+    } else
+    if (atspanel_error_check(ATH_SIDEA, ATSP_ERR_DOOR) ||
+        atspanel_error_check(ATH_SIDEB, ATSP_ERR_DOOR)) {
+        athlcd_printf(0, "      AUTO      ");
+        athlcd_printf(1, "  Door opened   ");
+    } else
+    if (atspanel_error_check(ATH_SIDEA, ATSP_ERR_PAPER) ||
+        atspanel_error_check(ATH_SIDEB, ATSP_ERR_PAPER)) {
+        athlcd_printf(0, "     ERROR      ");
+        athlcd_printf(1, " PAPER TORN OUT ");
+    } else
+    if (atspanel_error_check(ATH_SIDEA, ATSP_ERR_MOTOR) ||
+        atspanel_error_check(ATH_SIDEB, ATSP_ERR_MOTOR)) {
+        athlcd_printf(0, "     ERROR      ");
+        athlcd_printf(1, "  MOTOR ERROR   ");
+    } else {
+        #define MAXCU   7
+        #define MAXCD   9
+        char strbufu[ATH_SIDES][MAXCU];
+        char strbufd[ATH_SIDES][MAXCD];
+        uint8_t s;
+        for (s = 0; s < ATH_SIDES; s++) {
+            strbufu[s][0] = '\0';
+            strbufd[s][0] = '\0';
 
+            if (atspanel_isdoing(s, ATSP_REFERENCE)) {
+                snprintf(strbufu[s], MAXCU, "REF");
+                continue;
+            } else
+            if (!atspanel_isdoing(s, ATSP_AREADY)) {
+                /* late start */
+                snprintf(strbufu[s], MAXCU, "%.1fs", atspanel_getlatestart(s));
+                snprintf(strbufd[s], MAXCD, "Wait");
+                continue;
+            } else
+            if (atspanel_isdoing(s, ATSP_AREADY)) {
+                /* running */
+                if (atspanel_is_targeted(s)) {
+                    /* targeted */
+                    snprintf(strbufu[s], MAXCU, "%2d/%2d",
+                        atspanel_get_actualtrg(s),
+                        sv.a.utrgs[s]);
 
-    else {
-        //[----------------]
-        //[01/12 AUTO 01/12]
-        //[0.1s   OK   0.1s]
+                    snprintf(strbufd[s], MAXCD, "%.1fs",
+                        atspanel_get_nextjump(s));
+                } else {
+                    /* targeting */
+                    snprintf(strbufu[s], MAXCU, "%2d/%2d",
+                        atspanel_get_actualtrg(s),
+                        sv.a.utrgs[s]);
 
-        athlcd_printf(1, "%2d/%2d AUTO %2d/%2d",
-            0, atspanel_counttrgs_useful(ATH_SIDEA),
-            0, atspanel_counttrgs_useful(ATH_SIDEB));
+                    snprintf(strbufd[s], MAXCD, "going");
+                }
+                continue;
+            } else {
+                /* unknown error */
+                snprintf(strbufu[s], MAXCU, "UNERR");
+                continue;
+            }
+        }
+
+        athlcd_printf(0, "%-6sAUTO%6s", strbufu[ATH_SIDEA], strbufu[ATH_SIDEB]);
+        athlcd_printf(1, "%-8s%8s", strbufd[ATH_SIDEA], strbufd[ATH_SIDEB]);
     }
 
 }

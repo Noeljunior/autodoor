@@ -1,5 +1,7 @@
 #include "ats.h"
-
+/*  TODO
+    - always call referencing. only reference if ->doing & reerence > 0
+*/
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *                               PRIVATE DECLARATIONS
@@ -109,7 +111,7 @@ void atspanel_update(double dt) {
 
 
     update_panel(dt, &state[ATH_SIDEA]);
-    //update_panel(dt, &state[ATH_SIDEB]);
+    update_panel(dt, &state[ATH_SIDEB]);
 
 }
 
@@ -179,6 +181,22 @@ uint8_t atspanel_isdoing(uint8_t side, ATSP_ASK ask) {
 
 uint8_t atspanel_mismatched(uint8_t side) {
     return state[side].aref.mismatch;
+}
+
+double atspanel_getlatestart(uint8_t side) {
+    return state[side].aauto.wfd;
+}
+
+double atspanel_get_nextjump(uint8_t side) {
+    return state[side].aauto.wait;
+}
+
+uint8_t atspanel_get_actualtrg(uint8_t side) {
+    return state[side].aauto.trg;
+}
+
+uint8_t atspanel_is_targeted(uint8_t side) {
+    return athmotor_targeted(side);
 }
 
 atsp_target * atspanel_getrefstmp(uint8_t side) {
@@ -294,7 +312,7 @@ uint8_t atspanel_error_erroring(uint8_t side) {
 }
 
 void atspanel_error_clearall(uint8_t side) {
-    return state[side].error = 0;
+    state[side].error = 0;
 }
 
 
@@ -337,14 +355,6 @@ uint8_t getnexti_greedy(atsp_target * t, int8_t i, int8_t *dir) {
 
 
 void update_panel(double dt, pstate * s) {
-
-    /* check and mark errors: MOTOR TODO */
-    //if (0) {
-    //    atspanel_error_add(s->side, ATSP_ERR_MOTOR);
-    //} else {
-    //    atspanel_error_clear(s->side, ATSP_ERR_MOTOR);
-    //}
-
     /* do what is suposed to be doing */
     if (s->doing & ATSP_OFF) { /* stop motors */
         athmotor_go(s->side, ATHM_STOP | ATHM_HARD);
@@ -353,14 +363,16 @@ void update_panel(double dt, pstate * s) {
             /* check and mark errors: DOOR */
             if (athin_switchedon(s->door)) {
                 atspanel_error_add(s->side, ATSP_ERR_DOOR);
+                atspanel_inconsistent(s->side);
             } else {
                 atspanel_error_clear(s->side, ATSP_ERR_DOOR);
             }
             /* check and mark errors: PAPER */
             if (athin_switchedon(s->paper)) {
                 atspanel_error_add(s->side, ATSP_ERR_PAPER);
+                atspanel_inconsistent(s->side);
             } else {
-                atspanel_error_clear(s->side, ATSP_ERR_PAPER);
+                //atspanel_error_clear(s->side, ATSP_ERR_PAPER);
             }
             /* check and mark errors: TARGETS */
             if (atspanel_counttrgs_useful(s->side) < 1) {
@@ -369,28 +381,26 @@ void update_panel(double dt, pstate * s) {
                 atspanel_error_clear(s->side, ATSP_ERR_NOTRGS);
             }
 
+            /* if some error occured, mark this panel as not ready */
+            if (atspanel_error_erroring(s->side)) {
+                s->doing &= ~ATSP_AREADY;
+            }
+
+
             if (!(s->doing & ATSP_AREADY)) {
-                /* check number of papers */
-                if (atspanel_counttrgs_useful(s->side) < 1) {
-                
-                    athlcd_printf(1, "Sem folhas defs");
+                /* check of errors */
+                if (atspanel_error_erroring(s->side)) {
+                    athmotor_go(s->side, ATHM_BRAKE);
+                    s->aauto.wfd = 3.0 * (s->side + 1);
                     return;
                 }
-                /* if door is opnen... */
-                if (athin_switchedon(s->door)) {
-                    athmotor_go(s->side, ATHM_BRAKE);
-                    s->aauto.wfd = 3.0;
-                    athlcd_printf(1, "Porta aberta...");
-                    atspanel_error_add(s->side, ATSP_ERR_DOOR);
-                    atspanel_inconsistent(s->side);
-                    return;
-                } else
+
+                /* late start after error recovering */
                 if (s->aauto.wfd > 0.0) {
                     s->aauto.wfd -= dt;
-                    athlcd_printf(1, "Iniciar em %s",
-                        ats_time_tos(s->aauto.wfd, 1));
                     return;
                 }
+
                 /* do reference */
                 if (s->doing & ATSP_REFERENCE) {
                     if (!reference(s, dt)) {
@@ -409,18 +419,10 @@ void update_panel(double dt, pstate * s) {
                 s->aauto.wait = 0.0;
                 s->aauto.dir  = -1;
                 s->aauto.trg  = 1;
-                s->aauto.wfd  = 3.0;
 
                 s->doing |= ATSP_AREADY;
                 return;
             }
-            
-            /* door open? */
-            if (athin_switchedon(s->door)) {
-                s->doing &= ~ATSP_AREADY;
-                return;
-            }
-
 
             /* do run! */
             if (s->aauto.wait <= 0.0) { /* time's over, get next! */
@@ -435,15 +437,9 @@ void update_panel(double dt, pstate * s) {
 
             } else { /* waiting 'til the next! */
                 if (!athmotor_targeted(s->side)) {
-                    /* going to it... */
-                    athlcd_printf(1, "A ir p/ folha %d", s->aauto.trg + 1);
                 } else {
                     /* waiting */
                     s->aauto.wait -= dt;
-                    athlcd_printf(1, "[%2d] Prox %s", s->aauto.trg + 1,
-                        ats_time_tos(s->aauto.wait, 1));
-
-
                 }
             }
         } else
@@ -492,7 +488,7 @@ uint8_t reference(pstate * s, double dt) {
         athmotor_unset_limits(s->side);
         r->wait = 0.5;
         r->state = 1;
-        athlcd_printf(1, "{R} Inicio");
+        //athlcd_printf(1, "{R} Inicio"); TODO
     } else
     if (r->state  == 1) { /* rolling down */
         if (fabs(athmotor_rps(s->side)) < STOP_THRESHOLD &&
@@ -513,7 +509,7 @@ uint8_t reference(pstate * s, double dt) {
             athmotor_gos(s->side, ATHM_UP, ATHM_FAST);
             r->wait = 0.5;
             r->state = 3;
-            athlcd_printf(1, "{R} Fim");
+            //athlcd_printf(1, "{R} Fim"); TODO
         }
     } else
     if (r->state  == 3) { /* rolling up */
@@ -533,7 +529,7 @@ uint8_t reference(pstate * s, double dt) {
             r->limit_end = athmotor_position(s->side) - LIMIT_CALIB; // TODO force get postition
             r->lenght    = r->limit_end - r->limit_start;
             r->state = 5;
-            athlcd_printf(1, "{R} Esticar");
+            //athlcd_printf(1, "{R} Esticar"); TODO
 
             /* go to the begining */
             athmotor_gotos(s->side, r->limit_start, ATHM_ONESHOT, ATHM_FAST);
