@@ -8,7 +8,6 @@
         map PORTs to PWM timers
 */
 
-
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *                                      ATH:LCD
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -28,6 +27,7 @@
 #define ATHIN_RIGHT_PIN             K5
 #define ATHIN_DOOR_PIN              D7
 #define ATHIN_PAPER_PIN             L3
+#define ATHIN_WARRANTY_PIN          F1
 
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *

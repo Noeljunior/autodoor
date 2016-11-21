@@ -44,11 +44,31 @@ void            ath_sempost(semaphore * s);
 uint8_t         ath_semwait(semaphore * s, uint8_t w);
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ *                                      ATH:WARRANTY
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+#ifndef TD_ATHWAR_H_
+#define TD_ATHWAR_H_
+typedef enum    ATHWAR {
+                    ATHWAR_CLEAR        = 0,
+                    ATHWAR_VOIDED       = 1 << 0,
+                    ATHWAR_RUNTIME      = 1 << 1,
+                    ATHWAR_TIMEOUT      = 1 << 2,
+                    ATHWAR_TIMESHIFT    = 1 << 3,
+                    ATHWAR_HWERROR      = 1 << 4,
+                ATHWAR_MAX } ATHWAR;
+#endif
+
+int8_t          athwarranty_init();
+int8_t          athwarranty_update(double dt);
+int8_t          athwarranty_check();
+void            athwarranty_void(ATHWAR reason);
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *                                      ATH:EEPROM
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-
 void            ath_eeprom_init();
 int8_t          ath_eeprom_register(void * obj, uint16_t size);
+void            ath_eeprom_reload(uint8_t oid);
 void            ath_eeprom_save(uint8_t oid);
 void            ath_eeprom_saveall();
 
@@ -79,6 +99,7 @@ typedef enum    ATHIN {
                     ATHIN_RIGHT,
                     ATHIN_DOOR,
                     ATHIN_PAPER,
+                    ATHIN_WARRANTY,
                 ATHIN_MAX } ATHIN;
 #endif
 

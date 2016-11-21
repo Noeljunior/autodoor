@@ -16,15 +16,10 @@ double          dt      = 0.0;
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *                                  HAL INTERFACE
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-//char ram1[] = "ABC";
-//char ram2[] = "DEF";
-char ram1[] = "AB";
-char ram2[] = "CD";
-char ram3[] = "      ";
-
 void athinit() {
     /* inner modules */
-    ath_eeprom_init();
+    //ath_eeprom_init();
+    //athwarranty_init();
 
     /* init modules */
     athtiming_init();
@@ -53,14 +48,17 @@ void athupdate() {
     /* slow motion */
     //_delay_ms(100);
 
-    /* update modules */
+    /* inner modules */
     athtiming_update(dt);
+    //athwarranty_update(dt);
+
+    /* update modules */
     athlcd_update(dt);
     athin_update(dt);
     athout_update(dt);
     //athrgb_update(dt);
     athmotor_update(dt);
-   athdecoder_update(dt);
+    athdecoder_update(dt);
 
     /* show fps */
     //athlcd_printf(1, "FPS: %f", dt);
@@ -76,7 +74,7 @@ double ath_dt() {
     return dt;
 }
 
-
+/* * * * * * * * * * * * * * * * * SEMAPHORES * * * * * * * * * * * * * * * */
 void ath_seminit(semaphore * s) {
     s->lock = 0;
     s->who  = 0;
@@ -98,6 +96,67 @@ uint8_t ath_semwait(semaphore * s, uint8_t w) {
 }
 
 /* * * * * * * * * * * * * * * * * * WARRANTY * * * * * * * * * * * * * * * * */
+pin      warranty_pin;
+int8_t   warranty_voided;
+int8_t   warranty_eeid;
+double   warranty_edt;
+
+int8_t athwarranty_init() {
+    /* factory default is non-violated warranty */
+    warranty_voided = ATHWAR_CLEAR;
+
+    /* zero the music */
+    warranty_edt = 0.0;
+
+    /* setup eeprom */
+    warranty_eeid =  ath_eeprom_register(&warranty_voided,
+        sizeof(warranty_voided));
+
+    /* check if the warraty is already voided */
+    //if (athin_pressed(ATHWARRANTY_PIN) || warranty_voided) {
+    //    warranty_voided = -1;
+    //    ath_eeprom_save(warranty_eeid);
+    //}
+
+    return warranty_voided;
+}
+
+int8_t athwarranty_update(double dt) {
+    /* check if warranty seal is beeing voided */
+    if (athin_pressed(ATHIN_WARRANTY)) {
+        athwarranty_void(ATHWAR_VOIDED);
+    }
+    /* check if warranty timeout is beeing voided */
+    // TODO
+    if (0) {
+        athwarranty_void(ATHWAR_TIMEOUT);
+    }
+
+    if (warranty_voided) {
+        /* play song */
+        
+    }
+    return warranty_voided;
+
+}
+
+int8_t athwarranty_check() {
+    return warranty_voided;
+}
+
+void athwarranty_void(ATHWAR reason) {
+    /* is this reason already happened, ignore it */
+    if (warranty_voided & reason) {
+        return;
+    }
+
+    /* mark this reason */
+    warranty_voided |= reason;
+    ath_eeprom_save(warranty_eeid);
+
+    /* TODO shut everything off */
+
+}
 
 
 /* * * * * * * * * * * * * * * * * * * IO * * * * * * * * * * * * * * * * * */
@@ -429,7 +488,7 @@ int8_t ath_eeprom_register(void * obj, uint16_t size) {
     void * addr = 0;
     if (eobjs.total > 0) {
         addr = eobjs.objs[eobjs.total - 1].addr +
-            ceil(eobjs.objs[eobjs.total - 1].size / 2);
+            (int8_t) ceil(eobjs.objs[eobjs.total - 1].size / 2);
     }
 
     /* copy info */
@@ -447,6 +506,13 @@ int8_t ath_eeprom_register(void * obj, uint16_t size) {
     /* increment and return the id */
     eobjs.total++;
     return (eobjs.total - 1);
+}
+
+void ath_eeprom_reload(uint8_t oid) {
+    eeprom_read_block(
+        eobjs.objs[oid].obj,
+        eobjs.objs[oid].addr,
+        eobjs.objs[oid].size);
 }
 
 void ath_eeprom_save(uint8_t oid) {

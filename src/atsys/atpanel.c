@@ -6,21 +6,18 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *                               PRIVATE DECLARATIONS
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+/* system global settings */
 typedef struct syssettings {
     uint8_t     doublesided;
                 /* motors settings */
-    double      limit_start[ATH_SIDES];
-    double      limit_end[ATH_SIDES];
-    double      lenght[ATH_SIDES];
+    //double      limit_start[ATH_SIDES];
+    //double      limit_end[ATH_SIDES];
+    //double      lenght[ATH_SIDES];
 
-    atsp_target target[ATH_SIDES][ATSP_MAXTARGETS];
+    //atsp_target target[ATH_SIDES][ATSP_MAXTARGETS];
 } syssettings;
-syssettings settings;
-
-//ATHE_EEP(syssettings, ee_settings) = {0};
-
-
-
+syssettings settings = {0};
 
 /* state */
 typedef struct pstate {
@@ -32,7 +29,9 @@ typedef struct pstate {
     uint8_t         door;
     uint8_t         paper;
 
-    atsp_target *   trgs;
+    /* paper stuff */
+    atsp_target     trgs[ATSP_MAXTARGETS];
+    double          lenght;
 
     /*
         TASK SPECIFIC
@@ -54,12 +53,11 @@ typedef struct pstate {
         double      limit_start,
                     limit_end;
         double      lenght;
-        atsp_target trgs[ATSP_MAXTARGETS];
+        //atsp_target trgs[ATSP_MAXTARGETS];
     } aref;
 
 } pstate;
 pstate state[ATH_SIDES] = {0};
-//semaphore locksem;
 
 void        init_panel(pstate * s, uint8_t side, uint8_t door, uint8_t paper);
 void        update_panel(double dt, pstate * s);
@@ -83,25 +81,25 @@ void atspanel_init() {
 
     /* postitions test */
     settings.target[ATH_SIDEA][0].inuse    = 1;
-    settings.target[ATH_SIDEA][0].target   = 0.73;
-    settings.target[ATH_SIDEA][0].duration = 10.0;
+    settings.target[ATH_SIDEA][0].target   = 2.0;
+    settings.target[ATH_SIDEA][0].duration = 5.0;
     settings.target[ATH_SIDEA][1].inuse    = 1;
-    settings.target[ATH_SIDEA][1].target   = 8.77;
-    settings.target[ATH_SIDEA][1].duration = 15.0;
+    settings.target[ATH_SIDEA][1].target   = 5.0;
+    settings.target[ATH_SIDEA][1].duration = 7.5;
     settings.target[ATH_SIDEA][2].inuse    = 1;
-    settings.target[ATH_SIDEA][2].target   = 16.84;
-    settings.target[ATH_SIDEA][2].duration = 8.0;
+    settings.target[ATH_SIDEA][2].target   = 8.0;
+    settings.target[ATH_SIDEA][2].duration = 10.0;
 
     /* postitions test */
     settings.target[ATH_SIDEB][0].inuse    = 1;
     settings.target[ATH_SIDEB][0].target   = 2.0;
-    settings.target[ATH_SIDEB][0].duration = 0.75;
+    settings.target[ATH_SIDEB][0].duration = 7.5;
     settings.target[ATH_SIDEB][1].inuse    = 1;
-    settings.target[ATH_SIDEB][1].target   = 7.0;
-    settings.target[ATH_SIDEB][1].duration = 15.0;
+    settings.target[ATH_SIDEB][1].target   = 5.0;
+    settings.target[ATH_SIDEB][1].duration = 10.0;
     settings.target[ATH_SIDEB][2].inuse    = 1;
-    settings.target[ATH_SIDEB][2].target   = 13.0;
-    settings.target[ATH_SIDEB][2].duration = 8.0;
+    settings.target[ATH_SIDEB][2].target   = 8.0;
+    settings.target[ATH_SIDEB][2].duration = 5.0;
 
 
 }
@@ -200,7 +198,7 @@ uint8_t atspanel_is_targeted(uint8_t side) {
 }
 
 atsp_target * atspanel_getrefstmp(uint8_t side) {
-    return state[side].aref.trgs;
+    //return state[side].aref.trgs;
 }
 atsp_target * atspanel_getrefs(uint8_t side) {
     return state[side].trgs;
@@ -231,10 +229,11 @@ void atspanel_copytrgs(atsp_target * src, atsp_target * dst) {
 }
 
 void atspanel_savetargets(uint8_t side) {
-    uint8_t i;
-    for (i = 0; i < ATSP_MAXTARGETS; i++) {
-        state[side].trgs[i] = state[side].aref.trgs[i];
-    }
+
+    //uint8_t i;
+    //for (i = 0; i < ATSP_MAXTARGETS; i++) {
+    //    state[side].trgs[i] = state[side].aref.trgs[i];
+    //}
 }
 
 void atspanel_walk(uint8_t side, uint8_t keyup, uint8_t keydown, uint8_t slow) {
@@ -332,22 +331,23 @@ void init_panel(pstate * s, uint8_t side, uint8_t door, uint8_t paper) {
 
     s->trgs  = settings.target[side];
 }
-
 uint8_t getnexti_greedy(atsp_target * t, int8_t i, int8_t *dir) {
     int8_t oi = i;
+    i += *dir;
     while (i >= 0 && i < ATSP_MAXTARGETS) {
-        i += *dir;
         if (t[i].inuse && t[i].duration >= 1.0) { /* found */
             return i;
         }
+        i += *dir;
     }
     *dir *= -1;
     i = oi;
+    i += *dir;
     while (i >= 0 && i < ATSP_MAXTARGETS) {
-        i += *dir;
         if (t[i].inuse && t[i].duration >= 1.0) { /* found */
             return i;
         }
+        i += *dir;
     }
     *dir *= -1;
     return oi;
@@ -428,7 +428,7 @@ void update_panel(double dt, pstate * s) {
             if (s->aauto.wait <= 0.0) { /* time's over, get next! */
                 /* find next position */
                 s->aauto.trg = getnexti_greedy(s->trgs, s->aauto.trg,
-                    &s->aauto.dir);
+                    &(s->aauto.dir));
                 s->aauto.wait = s->trgs[s->aauto.trg].duration;
 
                 /* go to it */
@@ -459,7 +459,7 @@ void update_panel(double dt, pstate * s) {
 
 #define STOP_THRESHOLD        0.1
 #define DIFF_THRESHOLD        (INTER_PAGE  0.5)
-#define LIMIT_CALIB           0.25
+#define LIMIT_CALIB           0.5
 
 #define INTER_PAGE            6.0
 #define INTER_PRE             0.0
@@ -472,7 +472,7 @@ void reference_init(pstate * s) {
     r->wait      = -1.0;
     r->mismatch  = 1;
 
-    athlcd_printf(1, "{R} Referenciar");
+    //athlcd_printf(1, "{R} Referenciar");
 }
 
 uint8_t reference(pstate * s, double dt) {
@@ -495,7 +495,7 @@ uint8_t reference(pstate * s, double dt) {
                 r->wait < 0.0) {
             atspanel_hobble_disable(s->side);
             athmotor_go(s->side, ATHM_BRAKE | ATHM_HARD);
-            r->wait = 0.25;
+            r->wait = 1.25;
             r->state = 2;
         }
     } else
@@ -520,7 +520,7 @@ uint8_t reference(pstate * s, double dt) {
                 r->wait < 0.0) {
             atspanel_hobble_disable(s->side);
             athmotor_go(s->side, ATHM_BRAKE | ATHM_HARD);
-            r->wait = 0.25;
+            r->wait = 1.25;
             r->state = 4;
         }
     } else

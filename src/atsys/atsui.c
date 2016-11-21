@@ -172,7 +172,7 @@ double led_mode_blink1b[] = {0.05, 0.1, 0.05, 0.8};
 
 void s_auto_init() {
     athlcd_clear();
-    athlcd_printf(0, "      AUTO");
+    //athlcd_printf(0, "      AUTO");
 
     ats_setwside(ATH_NOSIDE);
 
@@ -255,7 +255,7 @@ void s_auto(double dt) {
                 if (atspanel_is_targeted(s)) {
                     /* targeted */
                     snprintf(strbufu[s], MAXCU, "%2d/%2d",
-                        atspanel_get_actualtrg(s),
+                        atspanel_get_actualtrg(s) + 1,
                         sv.a.utrgs[s]);
 
                     snprintf(strbufd[s], MAXCD, "%.1fs",
@@ -263,7 +263,7 @@ void s_auto(double dt) {
                 } else {
                     /* targeting */
                     snprintf(strbufu[s], MAXCU, "%2d/%2d",
-                        atspanel_get_actualtrg(s),
+                        atspanel_get_actualtrg(s) + 1,
                         sv.a.utrgs[s]);
 
                     snprintf(strbufd[s], MAXCD, "going");

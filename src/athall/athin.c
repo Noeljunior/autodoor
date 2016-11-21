@@ -80,6 +80,11 @@ void athin_init() {
     btns[ATHIN_PAPER].mode = SWITCH;
     ath_init_setmode(&btns[ATHIN_PAPER].pin, GALL(ATHIN_PAPER_PIN),
         ATHP_INPUT | ATHP_SET_PULLUP | ATHP_INVERT);
+
+    /* ATHIN_WARRANTY */
+    btns[ATHIN_WARRANTY].mode = SWITCH;
+    ath_init_setmode(&btns[ATHIN_WARRANTY].pin, GALL(ATHIN_WARRANTY_PIN),
+        ATHP_INPUT | ATHP_SET_PULLUP | ATHP_INVERT);
 }
 
 
