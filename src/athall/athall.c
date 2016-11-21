@@ -21,7 +21,8 @@ void athinit() {
     //PIN_DOUT(ATHOUT_LCDBL_PIN);
     //PIN_HIGH(ATHOUT_LCDBL_PIN);
 
-
+    /* inner modules */
+    ath_eeprom_init();
 
     /* init modules */
     athtiming_init();
@@ -31,7 +32,6 @@ void athinit() {
     //athrgb_init();
     athmotor_init();
     athdecoder_init();
-    
 
 }
 
@@ -50,9 +50,6 @@ void athupdate() {
 
     /* slow motion */
     //_delay_ms(100);
-
-    /* inner modules */
-    ath_eeprom_init();
 
     /* update modules */
     athtiming_update(dt);
@@ -436,7 +433,11 @@ int8_t ath_eeprom_register(void * obj, uint16_t size) {
     eobjs.objs[eobjs.total].addr = addr;
 
     /* load eeprom into memory */
+    #ifndef ATH_RESET_EEPROM
     eeprom_read_block(obj, addr, size);
+    #else
+    eeprom_write_block(obj, addr, size);
+    #endif
 
     /* increment and return the id */
     eobjs.total++;
