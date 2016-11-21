@@ -1,8 +1,9 @@
 #include "ath.h"
 
 /* TODO
-    read pin analog!
-    dummy load if cycle is too slow
+    - read pin analog!
+    - dummy load if cycle is too slow
+    - warranty check
 */
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -15,12 +16,13 @@ double          dt      = 0.0;
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *                                  HAL INTERFACE
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+//char ram1[] = "ABC";
+//char ram2[] = "DEF";
+char ram1[] = "AB";
+char ram2[] = "CD";
+char ram3[] = "      ";
 
 void athinit() {
-    /* TODO EXPECTIONS */
-    //PIN_DOUT(ATHOUT_LCDBL_PIN);
-    //PIN_HIGH(ATHOUT_LCDBL_PIN);
-
     /* inner modules */
     ath_eeprom_init();
 
@@ -58,10 +60,11 @@ void athupdate() {
     athout_update(dt);
     //athrgb_update(dt);
     athmotor_update(dt);
-    athdecoder_update(dt);
-//athlcd_printf(0, "     AUTO");
+   athdecoder_update(dt);
+
     /* show fps */
     //athlcd_printf(1, "FPS: %f", dt);
+
     _delay_ms(20);
 }
 
@@ -93,6 +96,9 @@ uint8_t ath_semwait(semaphore * s, uint8_t w) {
     s->who  = (1 << w);
     return 0; /* do not need to wait */
 }
+
+/* * * * * * * * * * * * * * * * * * WARRANTY * * * * * * * * * * * * * * * * */
+
 
 /* * * * * * * * * * * * * * * * * * * IO * * * * * * * * * * * * * * * * * */
 void ath_pin_init(pin * p, volatile uint8_t *ddr, volatile uint8_t *port,
@@ -409,8 +415,7 @@ typedef struct eeprom {
     uint8_t         total;
     eeobj           objs[ATH_MAXEEPROM];
 } eeprom;
-
-eeprom eobjs;
+eeprom eobjs = {0};
 
 void ath_eeprom_init() {
     eobjs.total = 0;
@@ -424,7 +429,7 @@ int8_t ath_eeprom_register(void * obj, uint16_t size) {
     void * addr = 0;
     if (eobjs.total > 0) {
         addr = eobjs.objs[eobjs.total - 1].addr +
-            eobjs.objs[eobjs.total - 1].size;
+            ceil(eobjs.objs[eobjs.total - 1].size / 2);
     }
 
     /* copy info */
@@ -436,7 +441,7 @@ int8_t ath_eeprom_register(void * obj, uint16_t size) {
     #ifndef ATH_RESET_EEPROM
     eeprom_read_block(obj, addr, size);
     #else
-    eeprom_write_block(obj, addr, size);
+    eeprom_update_block(obj, addr, size);
     #endif
 
     /* increment and return the id */
@@ -445,7 +450,7 @@ int8_t ath_eeprom_register(void * obj, uint16_t size) {
 }
 
 void ath_eeprom_save(uint8_t oid) {
-    eeprom_write_block(
+    eeprom_update_block(
         eobjs.objs[oid].obj,
         eobjs.objs[oid].addr,
         eobjs.objs[oid].size);
