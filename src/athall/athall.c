@@ -51,6 +51,9 @@ void athupdate() {
     /* slow motion */
     //_delay_ms(100);
 
+    /* inner modules */
+    ath_eeprom_init();
+
     /* update modules */
     athtiming_update(dt);
     athlcd_update(dt);
@@ -397,4 +400,64 @@ void ath_pin_pwm(pin * p, double dc) {
 /*uint8_t ath_pin_set_analog(pin * p, volatile uint8_t *port, uint8_t bit) {
     TODO
 }*/
+
+
+/* * * * * * * * * * * * * * * * * * EEPROM * * * * * * * * * * * * * * * * */
+typedef struct eeobj {
+    uint16_t        size;
+    void *          addr;
+    void *          obj;
+} eeobj;
+typedef struct eeprom {
+    uint8_t         total;
+    eeobj           objs[ATH_MAXEEPROM];
+} eeprom;
+
+eeprom eobjs;
+
+void ath_eeprom_init() {
+    eobjs.total = 0;
+}
+
+int8_t ath_eeprom_register(void * obj, uint16_t size) {
+    if (eobjs.total >= ATH_MAXEEPROM)
+        return -1;
+
+    /* compute eeprom addr */
+    void * addr = 0;
+    if (eobjs.total > 0) {
+        addr = eobjs.objs[eobjs.total - 1].addr +
+            eobjs.objs[eobjs.total - 1].size;
+    }
+
+    /* copy info */
+    eobjs.objs[eobjs.total].obj = obj;
+    eobjs.objs[eobjs.total].size = size;
+    eobjs.objs[eobjs.total].addr = addr;
+
+    /* load eeprom into memory */
+    eeprom_read_block(obj, addr, size);
+
+    /* increment and return the id */
+    eobjs.total++;
+    return (eobjs.total - 1);
+}
+
+void ath_eeprom_save(uint8_t oid) {
+    eeprom_write_block(
+        eobjs.objs[oid].obj,
+        eobjs.objs[oid].addr,
+        eobjs.objs[oid].size);
+}
+
+void ath_eeprom_saveall() {
+    uint8_t i;
+    for (i = 0; i < eobjs.total; i++) {
+        ath_eeprom_save(i);
+    }
+}
+
+
+
+
 

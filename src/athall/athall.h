@@ -44,6 +44,15 @@ void            ath_sempost(semaphore * s);
 uint8_t         ath_semwait(semaphore * s, uint8_t w);
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ *                                      ATH:EEPROM
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+void            ath_eeprom_init();
+int8_t          ath_eeprom_register(void * obj, uint16_t size);
+void            ath_eeprom_save(uint8_t oid);
+void            ath_eeprom_saveall();
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *                                      ATH:TIMING
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 uint32_t        athtiming_ms();
@@ -110,6 +119,7 @@ void            athout_dc(uint8_t out, double dc);
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *                                      ATH:RGB
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+#ifdef ATH_USE_RGB
 #define         ATHRGB_RGB      0
 #define         ATHRGB_HSV      1
 #define         ATHRGB_HSL      2
@@ -140,6 +150,7 @@ void            HSLtoRGB(double h, double s, double l, double *rgb);
 //void            athout_sequence(uint8_t out, double * v, uint16_t vs, uint8_t r);
 //void            athout_dc(uint8_t out, double dc);
 
+#endif
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *                                      ATH:MOTOR
