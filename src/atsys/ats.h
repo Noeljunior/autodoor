@@ -10,6 +10,8 @@
  *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 #include "atsys.h"
+#include "ats_strings.h"
+
 
 void            ats_setwside(int8_t wside);
 int8_t          ats_wside();
@@ -19,6 +21,15 @@ char *          ats_time_tos(double t, uint8_t hp);
  *                                      ATS:PANEL
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 #define     ATSP_MISMATCH_THRESHOLD     1.0 /* more or less this revolutions */
+
+
+#ifndef TD_ATSGS_H_
+#define TD_ATSGS_H_
+typedef enum    ATSP_SETTINGS {
+                    ATSP_DOUBLESIDE = (1 << 0),
+                    ATSP_RELAY      = (1 << 1),
+                } ATSP_SETTINGS;
+#endif
 #ifndef TD_ATSP_H_
 #define TD_ATSP_H_
 typedef enum    ATSP_ASK {
@@ -36,6 +47,7 @@ typedef enum    ATSP_ASK {
 #ifndef TD_ATSPE_H_
 #define TD_ATSPE_H_
 typedef enum    ATSP_ERR {
+                    ATSP_ERR_CLEAR    = (0),      /* no error */
                     ATSP_ERR_DIRTY    = (1 << 0), /* dirty bit */
                     ATSP_ERR_PAPER    = (1 << 1), /* no paper detected on IR */
                     ATSP_ERR_DOOR     = (1 << 2), /* door opened */
@@ -65,15 +77,16 @@ void            atspanel_ask(uint8_t side, ATSP_ASK ask);
 uint8_t         atspanel_isdoing(uint8_t side, ATSP_ASK ask);
 uint8_t         atspanel_mismatched(uint8_t side);
 double          atspanel_getlatestart(uint8_t side);
-atsp_target *   atspanel_getrefstmp(uint8_t side);
+uint8_t         atspanel_counttrgs_estimation(uint8_t side);
+void            atspanel_use_estimation(uint8_t side);
 atsp_target *   atspanel_getrefs(uint8_t side);
-uint8_t         atspanel_counttrgs_active(atsp_target * ts);
+uint8_t         atspanel_counttrgs_active(uint8_t side);
 uint8_t         atspanel_counttrgs_useful(uint8_t side);
 double          atspanel_get_nextjump(uint8_t side);
 uint8_t         atspanel_get_actualtrg(uint8_t side);
 uint8_t         atspanel_is_targeted(uint8_t side);
-void            atspanel_copytrgs(atsp_target * src, atsp_target * dst);
-void            atspanel_savetargets(uint8_t side);
+//void            atspanel_copytrgs(atsp_target * src, atsp_target * dst);
+//void            atspanel_savetargets(uint8_t side);
 
 void            atspanel_walk(uint8_t side, uint8_t keyup, uint8_t keydown,
                     uint8_t slow);
@@ -92,6 +105,10 @@ uint8_t         atspanel_error_check(uint8_t side, ATSP_ERR err);
 uint8_t         atspanel_error_erroring(uint8_t side);
 void            atspanel_error_clearall(uint8_t side);
 
+void            atspanel_trgs_save(uint8_t side);
+void            atspanel_trgs_reload(uint8_t side);
+void            atspanel_globset_save();
+void            atspanel_globset_reload();
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *                                      ATS:UI

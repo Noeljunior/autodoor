@@ -81,7 +81,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *                                        ATH
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-#define ATH_MAXEEPROM                   16
+#define ATH_MAXEEPROM                   32
 
 #ifndef TD_ATHP_MODE_H_
 #define TD_ATHP_MODE_H_

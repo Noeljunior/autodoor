@@ -13,7 +13,7 @@
 #define ATHE_EEP(type, name)        const type EEMEM NV_##name
 #define ATHE_EEP_LOAD(type, name)   const type NV_##name
 
-#define ATH_RESET_EEPROM
+#define ATH_RESET_EEPROM            1
 
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *

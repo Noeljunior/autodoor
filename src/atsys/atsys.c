@@ -1,7 +1,7 @@
 #include "ats.h"
 
 char time_tos_tmp[10];
-int8_t  workingside = -1;
+int8_t  workingside = ATH_SIDEA;
 
 
 

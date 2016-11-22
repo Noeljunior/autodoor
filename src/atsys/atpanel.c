@@ -6,32 +6,53 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *                               PRIVATE DECLARATIONS
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+#define STOP_STRETCH_TIME     0.6
+#define STOP_THRESHOLD        0.1
+#define DIFF_THRESHOLD        (INTER_PAGE  0.5)
+#define LIMIT_CALIB           0.5
+#define INTER_PAGE            6.0
+#define INTER_PRE             0.0
+#define INTER_POS             0.0
+
+
 
 /* system global settings */
 typedef struct syssettings {
-    uint8_t     doublesided;
                 /* motors settings */
     //double      limit_start[ATH_SIDES];
     //double      limit_end[ATH_SIDES];
     //double      lenght[ATH_SIDES];
 
     //atsp_target target[ATH_SIDES][ATSP_MAXTARGETS];
+
+    struct eep {
+        uint16_t        gloset;
+        uint16_t        relayon;
+        uint16_t        relayoff;
+        //uint64_t    lastktime;
+    } eep;
+    int8_t          eepid;
+
 } syssettings;
 syssettings settings = {0};
 
 /* state */
 typedef struct pstate {
     ATSP_ASK        doing;
-
     ATSP_ERR        error;
 
+
     uint8_t         side;
+
     uint8_t         door;
     uint8_t         paper;
 
     /* paper stuff */
-    atsp_target     trgs[ATSP_MAXTARGETS];
-    double          lenght;
+    struct seep {
+        atsp_target     trgs[ATSP_MAXTARGETS];
+        double          lenght;
+    } eep;
+    int8_t          eepid;
 
     /*
         TASK SPECIFIC
@@ -69,44 +90,55 @@ uint8_t     reference(pstate * s, double dt);
  *                                 SYS INTERFACE
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 void atspanel_init() {
+    /* init panel settings */
+    settings.eep.gloset = ATSP_DOUBLESIDE | ATSP_RELAY;
+
+    /* register eeprom object */
+    //ettings.eepid = ath_eeprom_register(&(settings.eep), sizeof(settings.eep));
+
+
+    /* postitions test */
+    state[ATH_SIDEA].eep.trgs[0].inuse    = 1;
+    state[ATH_SIDEA].eep.trgs[0].target   = 2.0;
+    state[ATH_SIDEA].eep.trgs[0].duration = 5.0;
+    state[ATH_SIDEA].eep.trgs[1].inuse    = 1;
+    state[ATH_SIDEA].eep.trgs[1].target   = 5.0;
+    state[ATH_SIDEA].eep.trgs[1].duration = 7.5;
+    state[ATH_SIDEA].eep.trgs[2].inuse    = 1;
+    state[ATH_SIDEA].eep.trgs[2].target   = 8.0;
+    state[ATH_SIDEA].eep.trgs[2].duration = 10.0;
+
+    /* postitions test */
+    state[ATH_SIDEB].eep.trgs[0].inuse    = 1;
+    state[ATH_SIDEB].eep.trgs[0].target   = 2.0;
+    state[ATH_SIDEB].eep.trgs[0].duration = 7.5;
+    state[ATH_SIDEB].eep.trgs[1].inuse    = 1;
+    state[ATH_SIDEB].eep.trgs[1].target   = 5.0;
+    state[ATH_SIDEB].eep.trgs[1].duration = 10.0;
+    state[ATH_SIDEB].eep.trgs[2].inuse    = 1;
+    state[ATH_SIDEB].eep.trgs[2].target   = 8.0;
+    state[ATH_SIDEB].eep.trgs[2].duration = 5.0;
+
+
+
     /* init structure and state */
     init_panel(&state[ATH_SIDEA], ATH_SIDEA, ATHIN_DOOR, ATHIN_PAPER);
     init_panel(&state[ATH_SIDEB], ATH_SIDEB, ATHIN_DOOR, ATHIN_PAPER);
 
+
+    /* register eeprom entity */
+    //state[ATH_SIDEA].eepid = ath_eeprom_register(&(state[ATH_SIDEA].eep), sizeof(state[ATH_SIDEA].eep));
+    //state[ATH_SIDEB].eepid = ath_eeprom_register(&(state[ATH_SIDEB].eep), sizeof(state[ATH_SIDEB].eep));
+
     /* init semaphore */
     //ath_seminit(&locksem);
-
-    /* initalize motors state */
-
-
-    /* postitions test */
-    settings.target[ATH_SIDEA][0].inuse    = 1;
-    settings.target[ATH_SIDEA][0].target   = 2.0;
-    settings.target[ATH_SIDEA][0].duration = 5.0;
-    settings.target[ATH_SIDEA][1].inuse    = 1;
-    settings.target[ATH_SIDEA][1].target   = 5.0;
-    settings.target[ATH_SIDEA][1].duration = 7.5;
-    settings.target[ATH_SIDEA][2].inuse    = 1;
-    settings.target[ATH_SIDEA][2].target   = 8.0;
-    settings.target[ATH_SIDEA][2].duration = 10.0;
-
-    /* postitions test */
-    settings.target[ATH_SIDEB][0].inuse    = 1;
-    settings.target[ATH_SIDEB][0].target   = 2.0;
-    settings.target[ATH_SIDEB][0].duration = 7.5;
-    settings.target[ATH_SIDEB][1].inuse    = 1;
-    settings.target[ATH_SIDEB][1].target   = 5.0;
-    settings.target[ATH_SIDEB][1].duration = 10.0;
-    settings.target[ATH_SIDEB][2].inuse    = 1;
-    settings.target[ATH_SIDEB][2].target   = 8.0;
-    settings.target[ATH_SIDEB][2].duration = 5.0;
-
 
 }
 
 void atspanel_update(double dt) {
     /* TODO control both panel in mutual exclusion */
 
+    //athlcd_printf(0, "%d, %d", state[ATH_SIDEA].eepid, state[ATH_SIDEB].eepid);
 
     update_panel(dt, &state[ATH_SIDEA]);
     update_panel(dt, &state[ATH_SIDEB]);
@@ -140,7 +172,7 @@ void atspanel_ask(uint8_t side, ATSP_ASK ask) {
         //s->asking = 0;
         state[side].doing  = ATSP_OFF;
     }
-    if (ask & ATSP_SSAFE) { /* beeing asked to go auto mode */
+    if (ask & ATSP_SSAFE) { /* beeing asked to go safe mode */
         state[side].doing  = ATSP_SSAFE;
 
         /* break the motors */
@@ -197,17 +229,39 @@ uint8_t atspanel_is_targeted(uint8_t side) {
     return athmotor_targeted(side);
 }
 
-atsp_target * atspanel_getrefstmp(uint8_t side) {
-    //return state[side].aref.trgs;
-}
-atsp_target * atspanel_getrefs(uint8_t side) {
-    return state[side].trgs;
+uint8_t atspanel_counttrgs_estimation(uint8_t side) {
+    return (uint8_t)
+        ((state[side].eep.lenght - INTER_PRE - INTER_POS) / INTER_PAGE);
 }
 
-uint8_t atspanel_counttrgs_active(atsp_target * ts) {
+void atspanel_use_estimation(uint8_t side) {
+    double est = (state[side].eep.lenght - INTER_PRE - INTER_POS) / INTER_PAGE;
+    uint8_t i;
+    for (i = 0; i < ATSP_MAXTARGETS; i++) {
+        if (i < est) {
+            state[side].eep.trgs[i].inuse    = 1;
+            state[side].eep.trgs[i].target   =
+                LIMIT_CALIB + INTER_PRE + INTER_PAGE * i;
+            state[side].eep.trgs[i].duration = 0.0;
+        } else { /* reset others */
+            state[side].eep.trgs[i].inuse    = 0;
+            state[side].eep.trgs[i].target   = 0.0;
+            state[side].eep.trgs[i].duration = 0.0;
+        }
+    }
+}
+
+
+
+
+atsp_target * atspanel_getrefs(uint8_t side) {
+    return state[side].eep.trgs;
+}
+
+uint8_t atspanel_counttrgs_active(uint8_t side) {
     uint8_t c = 0, i;
     for (i = 0; i < ATSP_MAXTARGETS; i++) {
-        if (ts[i].inuse) c++;
+        if (state[side].eep.trgs[i].inuse) c++;
     }
     return c;
 }
@@ -215,26 +269,26 @@ uint8_t atspanel_counttrgs_active(atsp_target * ts) {
 uint8_t atspanel_counttrgs_useful(uint8_t side) {
     uint8_t c = 0, i;
     for (i = 0; i < ATSP_MAXTARGETS; i++) {
-        if (state[side].trgs[i].inuse &&
-            state[side].trgs[i].duration >= 1.0) c++;
+        if (state[side].eep.trgs[i].inuse &&
+            state[side].eep.trgs[i].duration >= 1.0) c++;
     }
     return c;
 }
 
-void atspanel_copytrgs(atsp_target * src, atsp_target * dst) {
-    uint8_t i;
-    for (i = 0; i < ATSP_MAXTARGETS; i++) {
-        dst[i] = src[i];
-    }
-}
+//void atspanel_copytrgs(atsp_target * src, atsp_target * dst) {
+//    uint8_t i;
+//    for (i = 0; i < ATSP_MAXTARGETS; i++) {
+//        dst[i] = src[i];
+//    }
+//}
 
-void atspanel_savetargets(uint8_t side) {
+//void atspanel_savetargets(uint8_t side) {
 
     //uint8_t i;
     //for (i = 0; i < ATSP_MAXTARGETS; i++) {
     //    state[side].trgs[i] = state[side].aref.trgs[i];
     //}
-}
+//}
 
 void atspanel_walk(uint8_t side, uint8_t keyup, uint8_t keydown, uint8_t slow) {
     if (athin_clicked(keyup) || athin_longclicked(keyup)) {
@@ -280,7 +334,12 @@ void atspanel_inconsistent(uint8_t side) {
     /* unset motors limits */
     athmotor_unset_limits(side);
 
+    /* mark this side with no valid reference */
+    atspanel_error_add(side, ATSP_ERR_NOREF);
+
+
     /* stop what is doing */
+    //state[side].doing &= (ATSP_OFF | ATSP_SAUTO | ATSP_SMANUAL | ATSP_SSAFE);
     if (state[side].doing & ATSP_OFF) {
         state[side].doing = ATSP_OFF;
     } else
@@ -314,8 +373,22 @@ void atspanel_error_clearall(uint8_t side) {
     state[side].error = 0;
 }
 
+void atspanel_trgs_save(uint8_t side) {
+    ath_eeprom_save(state[side].eepid);
+}
+void atspanel_trgs_reload(uint8_t side) {
+    double lenght = state[side].eep.lenght;
+    ath_eeprom_reload(state[side].eepid);
+    state[side].eep.lenght = lenght;
+}
 
+void atspanel_globset_save() {
+    ath_eeprom_save(settings.eepid);
+}
 
+void atspanel_globset_reload() {
+    ath_eeprom_reload(settings.eepid);
+}
 
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -323,13 +396,16 @@ void atspanel_error_clearall(uint8_t side) {
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 void init_panel(pstate * s, uint8_t side, uint8_t door, uint8_t paper) {
     s->doing = ATSP_OFF;
-    s->error = 0;
+    s->error = ATSP_ERR_CLEAR;
 
     s->side  = side;
     s->door  = door;
     s->paper = paper;
 
-    s->trgs  = settings.target[side];
+    /* register eeprom entity */
+    s->eepid = ath_eeprom_register(&(s->eep), sizeof(s->eep));
+
+    //s->trgs  = settings.target[side];
 }
 uint8_t getnexti_greedy(atsp_target * t, int8_t i, int8_t *dir) {
     int8_t oi = i;
@@ -354,7 +430,7 @@ uint8_t getnexti_greedy(atsp_target * t, int8_t i, int8_t *dir) {
 }
 
 
-void update_panel(double dt, pstate * s) {
+void update_panel(double dt, pstate * s) { //athlcd_printf(0, "%d", sizeof(s->eep));
     /* do what is suposed to be doing */
     if (s->doing & ATSP_OFF) { /* stop motors */
         athmotor_go(s->side, ATHM_STOP | ATHM_HARD);
@@ -427,12 +503,12 @@ void update_panel(double dt, pstate * s) {
             /* do run! */
             if (s->aauto.wait <= 0.0) { /* time's over, get next! */
                 /* find next position */
-                s->aauto.trg = getnexti_greedy(s->trgs, s->aauto.trg,
+                s->aauto.trg = getnexti_greedy(s->eep.trgs, s->aauto.trg,
                     &(s->aauto.dir));
-                s->aauto.wait = s->trgs[s->aauto.trg].duration;
+                s->aauto.wait = s->eep.trgs[s->aauto.trg].duration;
 
                 /* go to it */
-                athmotor_goto(s->side, s->trgs[s->aauto.trg].target,
+                athmotor_goto(s->side, s->eep.trgs[s->aauto.trg].target,
                     ATHM_STICKY);
 
             } else { /* waiting 'til the next! */
@@ -457,13 +533,6 @@ void update_panel(double dt, pstate * s) {
 }
 
 
-#define STOP_THRESHOLD        0.1
-#define DIFF_THRESHOLD        (INTER_PAGE  0.5)
-#define LIMIT_CALIB           0.5
-
-#define INTER_PAGE            6.0
-#define INTER_PRE             0.0
-#define INTER_POS             0.0
 
 void reference_init(pstate * s) {
     struct aref * r = &s->aref;
@@ -495,7 +564,7 @@ uint8_t reference(pstate * s, double dt) {
                 r->wait < 0.0) {
             atspanel_hobble_disable(s->side);
             athmotor_go(s->side, ATHM_BRAKE | ATHM_HARD);
-            r->wait = 1.25;
+            r->wait = STOP_STRETCH_TIME;
             r->state = 2;
         }
     } else
@@ -520,7 +589,7 @@ uint8_t reference(pstate * s, double dt) {
                 r->wait < 0.0) {
             atspanel_hobble_disable(s->side);
             athmotor_go(s->side, ATHM_BRAKE | ATHM_HARD);
-            r->wait = 1.25;
+            r->wait = STOP_STRETCH_TIME;
             r->state = 4;
         }
     } else
@@ -537,31 +606,34 @@ uint8_t reference(pstate * s, double dt) {
     } else
     if (r->state  == 5) { /* wait for reach the begining and exit */
         if (athmotor_targeted(s->side)) {
-            /* interpolate how many pages are here */
-            double est = (r->lenght - INTER_PRE - INTER_POS) / INTER_PAGE;
-            uint8_t i;
-            for (i = 0; i < ATSP_MAXTARGETS; i++) {
-                if (i < est) {
-                    r->trgs[i].inuse    = 1;
-                    r->trgs[i].target   =
-                        LIMIT_CALIB + INTER_PRE + INTER_PAGE * i;
-                    r->trgs[i].duration = 0.0;
-                } else { /* reset */
-                    r->trgs[i].inuse    = 0;
-                    r->trgs[i].target   = 0.0;
-                    r->trgs[i].duration = 0.0;
-                }
-            }
+            /* interpolate how many pages are here TODO ouside of here */
+            //double est = (r->lenght - INTER_PRE - INTER_POS) / INTER_PAGE;
+            //uint8_t i;
+            //for (i = 0; i < ATSP_MAXTARGETS; i++) {
+            //    if (i < est) {
+            //        r->trgs[i].inuse    = 1;
+            //        r->trgs[i].target   =
+            //            LIMIT_CALIB + INTER_PRE + INTER_PAGE * i;
+            //        r->trgs[i].duration = 0.0;
+            //    } else { /* reset */
+            //        r->trgs[i].inuse    = 0;
+            //        r->trgs[i].target   = 0.0;
+            //        r->trgs[i].duration = 0.0;
+            //    }
+            //}
             /* check if they match */
-            if (fabs(settings.lenght[s->side] - r->lenght) <
+            if (fabs(s->eep.lenght - r->lenght) <
                     ATSP_MISMATCH_THRESHOLD) {
                 r->mismatch = 0;
+                atspanel_error_add(s->side, ATSP_ERR_PLENMIS);
             }
 
             /* copy values to the panel's settings struct */
-            settings.limit_start[s->side] = r->limit_start;
-            settings.limit_end[s->side]   = r->limit_end;
-            settings.lenght[s->side]      = r->lenght;
+            //settings.limit_start[s->side] = r->limit_start;
+            //settings.limit_end[s->side]   = r->limit_end;
+            //settings.lenght[s->side]      = r->lenght;
+
+            s->eep.lenght = r->lenght;
 
             /* tell the moters its limits */
             athmotor_set_limits(s->side, r->limit_start, r->limit_end);

@@ -13,13 +13,27 @@ uint32_t        lastt   = 0;
 uint32_t        lasttus = 0;
 double          dt      = 0.0;
 
+
+typedef struct eeobj {
+    uint16_t        size;
+    void *          addr;
+    void *          obj;
+} eeobj;
+typedef struct eeprom {
+    uint8_t         total;
+    eeobj           objs[ATH_MAXEEPROM];
+} eeprom;
+eeprom eobjs = {0};
+uint8_t firstboot = 0;
+
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *                                  HAL INTERFACE
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+ uint8_t test[100];
 void athinit() {
     /* inner modules */
-    //ath_eeprom_init();
-    //athwarranty_init();
+    ath_eeprom_init();
+    athwarranty_init();
 
     /* init modules */
     athtiming_init();
@@ -29,6 +43,8 @@ void athinit() {
     //athrgb_init();
     athmotor_init();
     athdecoder_init();
+
+    
 
 }
 
@@ -50,7 +66,7 @@ void athupdate() {
 
     /* inner modules */
     athtiming_update(dt);
-    //athwarranty_update(dt);
+    athwarranty_update(dt);
 
     /* update modules */
     athlcd_update(dt);
@@ -62,6 +78,8 @@ void athupdate() {
 
     /* show fps */
     //athlcd_printf(1, "FPS: %f", dt);
+
+
 
     _delay_ms(20);
 }
@@ -109,8 +127,8 @@ int8_t athwarranty_init() {
     warranty_edt = 0.0;
 
     /* setup eeprom */
-    warranty_eeid =  ath_eeprom_register(&warranty_voided,
-        sizeof(warranty_voided));
+    //warranty_eeid =  ath_eeprom_register(&warranty_voided,
+    //    sizeof(warranty_voided));
 
     /* check if the warraty is already voided */
     //if (athin_pressed(ATHWARRANTY_PIN) || warranty_voided) {
@@ -465,19 +483,24 @@ void ath_pin_pwm(pin * p, double dc) {
 
 
 /* * * * * * * * * * * * * * * * * * EEPROM * * * * * * * * * * * * * * * * */
-typedef struct eeobj {
-    uint16_t        size;
-    void *          addr;
-    void *          obj;
-} eeobj;
-typedef struct eeprom {
-    uint8_t         total;
-    eeobj           objs[ATH_MAXEEPROM];
-} eeprom;
-eeprom eobjs = {0};
+
 
 void ath_eeprom_init() {
     eobjs.total = 0;
+
+    uint8_t eefirst;
+
+    eeprom_read_block(&eefirst, 0, sizeof(eefirst));
+
+    if (eefirst) {
+        firstboot = 1;
+        eefirst = 0;
+        eeprom_update_block(&eefirst, 0, sizeof(eefirst));
+    } else {
+        firstboot = 0;
+    }
+
+    //ath_eeprom_register(&firstboot, sizeof(firstboot));
 }
 
 int8_t ath_eeprom_register(void * obj, uint16_t size) {
@@ -485,10 +508,11 @@ int8_t ath_eeprom_register(void * obj, uint16_t size) {
         return -1;
 
     /* compute eeprom addr */
-    void * addr = 0;
+    void * addr = (void *) (sizeof(uint16_t) * 2);
     if (eobjs.total > 0) {
         addr = eobjs.objs[eobjs.total - 1].addr +
-            (int8_t) ceil(eobjs.objs[eobjs.total - 1].size / 2);
+            eobjs.objs[eobjs.total - 1].size +
+            (eobjs.objs[eobjs.total - 1].size % 2 != 0 ? 1 : 0);
     }
 
     /* copy info */
@@ -497,11 +521,11 @@ int8_t ath_eeprom_register(void * obj, uint16_t size) {
     eobjs.objs[eobjs.total].addr = addr;
 
     /* load eeprom into memory */
-    #ifndef ATH_RESET_EEPROM
-    eeprom_read_block(obj, addr, size);
-    #else
-    eeprom_update_block(obj, addr, size);
-    #endif
+    if (firstboot && ATH_RESET_EEPROM) {
+        eeprom_update_block(obj, addr, size);
+    } else {
+        eeprom_read_block(obj, addr, size);
+    }
 
     /* increment and return the id */
     eobjs.total++;
@@ -509,6 +533,8 @@ int8_t ath_eeprom_register(void * obj, uint16_t size) {
 }
 
 void ath_eeprom_reload(uint8_t oid) {
+    if (oid < 0 || oid > eobjs.total)
+        return;
     eeprom_read_block(
         eobjs.objs[oid].obj,
         eobjs.objs[oid].addr,
@@ -516,6 +542,8 @@ void ath_eeprom_reload(uint8_t oid) {
 }
 
 void ath_eeprom_save(uint8_t oid) {
+    if (oid < 0 || oid > eobjs.total)
+        return;
     eeprom_update_block(
         eobjs.objs[oid].obj,
         eobjs.objs[oid].addr,

@@ -122,8 +122,8 @@ void atsui_init() {
         sstack.stack[i] = -1;
     }
 
-    atsui_changestate(ATSUI_AUTO);
-    //atsui_changestate(ATSUI_MAIN);
+    //atsui_changestate(ATSUI_AUTO);
+    atsui_changestate(ATSUI_MAIN);
     //atsui_changestate(ATSUI_FREECONTROL);
     //atsui_changestate(ATSUI_LIGHT);
 
@@ -174,7 +174,7 @@ void s_auto_init() {
     athlcd_clear();
     //athlcd_printf(0, "      AUTO");
 
-    ats_setwside(ATH_NOSIDE);
+    ats_setwside(ATH_SIDEA);
 
     atspanel_ask(ATH_SIDEA, ATSP_SAUTO);
     atspanel_ask(ATH_SIDEB, ATSP_SAUTO);
@@ -205,6 +205,7 @@ void s_auto(double dt) {
     }
 
     if (athin_pressed(ATHIN_OK) && athin_pressed(ATHIN_CANCEL)) {
+        
         athlcd_printf(0, "   Getting out  ");
         athlcd_printf(1, "       ...      ");
         return;
@@ -288,7 +289,7 @@ double led_mode_blink2b[] = {0.0,  0.2, 0.05, 0.75};
 
 void s_main_init() {
     athlcd_clear();
-    athlcd_printf(0, "[MENU PRINCIPAL]");
+    athlcd_printf(0, "[  MAIN MENU   ]");
 
     /* init svars */
     sv.m.selector = 0;
@@ -306,9 +307,9 @@ void s_main_finish() {
 void s_main(double dt) {
     if (sv.m.selector < 0) { /* exiting */
         if (athin_pressed(ATHIN_OK)) { /* go back to menu */
-            athlcd_printf(1, "Saindo...");
+            athlcd_printf(1, "Exiting...");
         } else {
-            athlcd_printf(1, "Sair?");
+            athlcd_printf(1, "Exit?");
         }
         if (athin_clicked(ATHIN_CANCEL)) { /* go back to menu */
             sv.m.selector = 0;
@@ -327,72 +328,82 @@ void s_main(double dt) {
     }
 
     /* check and ask for each panel to config */
-    if (ats_wside() < 0) { /* no side selected */
-        if (athin_clicking(ATHIN_RIGHT)) sv.m.selector++;
-        if (athin_clicking(ATHIN_LEFT))  sv.m.selector--;
+    //if (ats_wside() < 0) { /* no side selected */
+    //    if (athin_clicking(ATHIN_RIGHT)) sv.m.selector++;
+    //    if (athin_clicking(ATHIN_LEFT))  sv.m.selector--;
 
-        if (sv.m.selector < 0) sv.m.selector = 2 - 1;
-        sv.m.selector = abs(sv.m.selector) % (2);
+    //    if (sv.m.selector < 0) sv.m.selector = 2 - 1;
+    //    sv.m.selector = abs(sv.m.selector) % (2);
 
-        switch (sv.m.selector) {
-            case 0: athlcd_printf(1, "Side A");
-                if (athin_clicked(ATHIN_OK)) {
-                    ats_setwside(ATH_SIDEA);
-                    sv.m.selector = 0;
-                    return;
-                }
-                break;
-            case 1: athlcd_printf(1, "Side B");
-                if (athin_clicked(ATHIN_OK)) {
-                    ats_setwside(ATH_SIDEB);
-                    sv.m.selector = 0;
-                    return;
-                }
-                break;
-        }
+    //    switch (sv.m.selector) {
+    //        case 0: athlcd_printf(1, "Side A");
+    //            if (athin_clicked(ATHIN_OK)) {
+    //                ats_setwside(ATH_SIDEA);
+    //                sv.m.selector = 0;
+    //                return;
+    //            }
+    //            break;
+    //        case 1: athlcd_printf(1, "Side B");
+    //            if (athin_clicked(ATHIN_OK)) {
+    //                ats_setwside(ATH_SIDEB);
+    //                sv.m.selector = 0;
+    //                return;
+    //            }
+    //            break;
+    //    }
 
-        return;
-    }
+    //    return;
+    //}
 
 
     if (athin_clicking(ATHIN_RIGHT)) sv.m.selector++;
     if (athin_clicking(ATHIN_LEFT))  sv.m.selector--;
 
-    if (sv.m.selector < 0) sv.m.selector = 6 - 1;
-    sv.m.selector = abs(sv.m.selector) % (6);
+    if (sv.m.selector < 0) sv.m.selector = 7 - 1;
+    sv.m.selector = abs(sv.m.selector) % (7);
 
     switch (sv.m.selector) {
-        case 0: athlcd_printf(1, "> controlo livre");
+        case 0: athlcd_printf(1, "> side? %c", ats_wside() == ATH_SIDEA ? 'A' :
+            (ats_wside() == ATH_SIDEB ? 'B' : '-'));
+            if (athin_clicked(ATHIN_OK)) {
+                if (ats_wside() == ATH_SIDEA) {
+                    ats_setwside(ATH_SIDEB);
+                } else {
+                    ats_setwside(ATH_SIDEA);
+                }
+            }
+            break;
+        case 1: athlcd_printf(1, "> free control");
             if (athin_clicked(ATHIN_OK)) {
                 atsui_changestate(ATSUI_FREECONTROL);
                 return;
             }
             break;
-        case 1: athlcd_printf(1, "> referenciar");
+        case 2: athlcd_printf(1, "> ads config");
             if (athin_clicked(ATHIN_OK)) {
                 atsui_changestate(ATSUI_REFERENCE);
                 return;
             }
             break;
-        case 2: athlcd_printf(1, "> luz");
+        case 3: athlcd_printf(1, "> relay config");
             if (athin_clicked(ATHIN_OK)) {
                 atsui_changestate(ATSUI_LIGHT);
                 return;
             }
             break;
-        case 3: athlcd_printf(1, "> SMS");
+        case 4: athlcd_printf(1, "> SMS");
             if (athin_clicked(ATHIN_OK)) {
                 atsui_changestate(ATSUI_SETTINGS);
                 return;
             }
             break;
-        case 4: athlcd_printf(1, "> definicoes");
+        case 5: athlcd_printf(1, "> definicoes");
             if (athin_clicked(ATHIN_OK)) {
                 atsui_changestate(ATSUI_SETTINGS);
                 return;
             }
             break;
-        case 5: athlcd_printf(1, "> sair");
+        case 6: athlcd_printf(1, "> exit");
             if (athin_clicked(ATHIN_OK)) {
                 sv.m.selector = -1;
                 return;
@@ -406,7 +417,7 @@ void s_main(double dt) {
 /* * * * * * * * * * * * REFERENCE * * * * * * * * * * * */
 void s_reference_init() {
     athlcd_clear();
-    athlcd_printf(0, "[REFERENCIAR]");
+    athlcd_printf(0, "[     ADS      ]");
 
     sv.r.selector = 0;
 }
@@ -434,16 +445,16 @@ void s_reference(double dt) {
 
 
     switch (sv.r.selector) {
-        case 0:
-            athlcd_printf(1, "> iniciar");
-            if (athin_clicked(ATHIN_OK)) {
-                atspanel_ask(ats_wside(), ATSP_REFERENCE);
-            }
-            break;
-        case 1: athlcd_printf(1, "> config. pubs.");
+        case 0: athlcd_printf(1, "> ads config");
             if (athin_clicked(ATHIN_OK)) {
                 atsui_changestate(ATSUI_CONFIGPUB);
                 return;
+            }
+            break;
+        case 1:
+            athlcd_printf(1, "> reference");
+            if (athin_clicked(ATHIN_OK)) {
+                atspanel_ask(ats_wside(), ATSP_REFERENCE);
             }
             break;
     }
@@ -452,7 +463,7 @@ void s_reference(double dt) {
 /* * * * * * * * * * * * FREECONTROL * * * * * * * * * * * */
 void s_freecontrol_init() {
     athlcd_clear();
-    athlcd_printf(0, "CONTROLO LIVRE");
+    //athlcd_printf(0, "CONTROLO LIVRE");
 
     sv.f.mode = 0;
     sv.f.slow = 0;
@@ -486,18 +497,18 @@ void s_freecontrol(double dt) {
         atspanel_walk(ats_wside(), ATHIN_UP, ATHIN_DOWN, sv.f.slow);
     } else
     if (sv.f.mode == 1) { /* hobble up */
-        athlcd_printf(0, "[L] Superior   %c", sv.f.slow ? '-' : ' ');
+        athlcd_printf(0, "[L] Up   %c", sv.f.slow ? '-' : ' ');
         atspanel_hobble_up(ats_wside());
         atspanel_walk(ats_wside(), ATHIN_UP, ATHIN_DOWN, sv.f.slow);
     } else
     if (sv.f.mode == 2) { /* hobble down */
-        athlcd_printf(0, "[L] Inferior   %c", sv.f.slow ? '-' : ' ');
+        athlcd_printf(0, "[L] Down   %c", sv.f.slow ? '-' : ' ');
         atspanel_hobble_down(ats_wside());
         atspanel_walk(ats_wside(), ATHIN_UP, ATHIN_DOWN, sv.f.slow);
     } else
     if (sv.f.mode == 3) { /* free */
         atspanel_hobble_disable(ats_wside());
-        athlcd_printf(0, "[L] Livre");
+        athlcd_printf(0, "[L] Free");
         atspanel_free(ats_wside());
     }
 
@@ -510,7 +521,7 @@ void s_freecontrol(double dt) {
 /* * * * * * * * * * * * CONFIGPUBS * * * * * * * * * * * */
 void s_configpubs_init() {
     athlcd_clear();
-    athlcd_printf(0, "CONFIG PUBS");
+    //athlcd_printf(0, "CONFIG PUBS");
 
     sv.c.state = 0;
     sv.c.smenu = -1;
@@ -526,13 +537,13 @@ void s_configpubs_finish() {
 void s_configpubs(double dt) {
     // TODO check for save modification on exiting
     if (sv.c.state < 0) {
-        athlcd_printf(0, "[C] Gravar?");
+        athlcd_printf(0, "[A] Save?");
 
         if      (athin_clicked(ATHIN_UP))   sv.c.save = 1;
         else if (athin_clicked(ATHIN_DOWN)) sv.c.save = 0;
 
-        if (sv.c.save) athlcd_printf(1, "Sim");
-        else           athlcd_printf(1, "Nao");
+        if (sv.c.save) athlcd_printf(1, "%16s", "Yes");
+        else           athlcd_printf(1, "%16s", "No");
 
         if (athin_clicked(ATHIN_CANCEL)) {
             //atsui_changestate(ATSUI_REFERENCE);
@@ -540,9 +551,10 @@ void s_configpubs(double dt) {
         }
         if (athin_clicked(ATHIN_OK)) {
             if (sv.c.save) {
-                atspanel_savetargets(ats_wside());
+                //atspanel_savetargets(ats_wside());
+                atspanel_trgs_save(ats_wside());
             } else {
-            
+                atspanel_trgs_reload(ats_wside());
             }
             atsui_changestate(ATSUI_REFERENCE);
         }
@@ -556,29 +568,30 @@ void s_configpubs(double dt) {
         }
 
         if (atspanel_mismatched(ats_wside())) {
-            athlcd_printf(0, "[C] Nova cfg? %c", sv.c.unc ? 'S' : 'N');
-            athlcd_printf(1, "Folhas: %d vs %d",
-                atspanel_counttrgs_active(atspanel_getrefstmp(ats_wside())),
-                atspanel_counttrgs_active(atspanel_getrefs(ats_wside())));
+            athlcd_printf(0, "[A] New confg? %c", sv.c.unc ? 'Y' : 'N');
+            athlcd_printf(1, "Ads: %d vs %d",
+                atspanel_counttrgs_estimation(ats_wside()),
+                atspanel_counttrgs_active(ats_wside()));
 
             if      (athin_clicked(ATHIN_UP))   sv.c.unc = 1;
             else if (athin_clicked(ATHIN_DOWN)) sv.c.unc = 0;
 
             if (athin_clicked(ATHIN_OK)) {
-                if (!sv.c.unc) {
-                    atspanel_copytrgs(atspanel_getrefs(ats_wside()),
-                        atspanel_getrefstmp(ats_wside()));
+                if (sv.c.unc) {
+                    //atspanel_copytrgs(atspanel_getrefs(ats_wside()),
+                    //    atspanel_getrefstmp(ats_wside()));
+                    atspanel_use_estimation(ats_wside());
                 }
                 sv.c.state = 1;
             }
         } else {
-            atspanel_copytrgs(atspanel_getrefs(ats_wside()),
-                atspanel_getrefstmp(ats_wside()));
+            //atspanel_copytrgs(atspanel_getrefs(ats_wside()),
+            //    atspanel_getrefstmp(ats_wside()));
             sv.c.state = 1;
         }
     } else
     if (sv.c.state == 1) {
-        atsp_target * trgs = atspanel_getrefstmp(ats_wside());
+        atsp_target * trgs = atspanel_getrefs(ats_wside());
 
         if (sv.c.smenu == 0) { /* position/time */
             if (athin_clicked(ATHIN_OK) || athin_clicked(ATHIN_CANCEL)) {
@@ -607,7 +620,7 @@ void s_configpubs(double dt) {
             }
             atspanel_walk(ats_wside(), ATHIN_UP, ATHIN_DOWN, slow);
 
-            athlcd_printf(0, "[C] Folha %2d?", sv.c.ctrg + 1);
+            athlcd_printf(0, "[A] Ad %2d?", sv.c.ctrg + 1);
             athlcd_printf(1, "P: --.--, %s",
                 ats_time_tos(trgs[sv.c.ctrg].duration, 0));
 
@@ -631,8 +644,8 @@ void s_configpubs(double dt) {
                 athmotor_goto(ats_wside(), trgs[sv.c.ctrg].target, ATHM_ONESHOT);
             }
 
-            athlcd_printf(0, "[C] Folha %2d (%c)", sv.c.ctrg + 1,
-                trgs[sv.c.ctrg].inuse ? 'S' : 'N');
+            athlcd_printf(0, "[A] Ad %2d (%c)", sv.c.ctrg + 1,
+                trgs[sv.c.ctrg].inuse ? 'Y' : 'N');
             athlcd_printf(1, "P: %5.2f, %s", trgs[sv.c.ctrg].target,
                 ats_time_tos(trgs[sv.c.ctrg].duration, 0));
 
@@ -704,6 +717,7 @@ void s_light(double dt) {
         atsui_changestate(ATSUI_MAIN);
         return;
     }
+    return;
 
     if (athin_clicking(ATHIN_RIGHT)) sv.l.led++;
     if (athin_clicking(ATHIN_LEFT))  sv.l.led--;
