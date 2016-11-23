@@ -11,8 +11,8 @@
 #define DIFF_THRESHOLD        (INTER_PAGE  0.5)
 #define LIMIT_CALIB           0.5
 #define INTER_PAGE            6.0
-#define INTER_PRE             0.0
-#define INTER_POS             0.0
+#define INTER_PRE             6.0
+#define INTER_POS             6.0
 
 
 
@@ -94,41 +94,35 @@ void atspanel_init() {
     settings.eep.gloset = ATSP_DOUBLESIDE | ATSP_RELAY;
 
     /* register eeprom object */
-    //ettings.eepid = ath_eeprom_register(&(settings.eep), sizeof(settings.eep));
-
-
-    /* postitions test */
-    state[ATH_SIDEA].eep.trgs[0].inuse    = 1;
-    state[ATH_SIDEA].eep.trgs[0].target   = 2.0;
-    state[ATH_SIDEA].eep.trgs[0].duration = 5.0;
-    state[ATH_SIDEA].eep.trgs[1].inuse    = 1;
-    state[ATH_SIDEA].eep.trgs[1].target   = 5.0;
-    state[ATH_SIDEA].eep.trgs[1].duration = 7.5;
-    state[ATH_SIDEA].eep.trgs[2].inuse    = 1;
-    state[ATH_SIDEA].eep.trgs[2].target   = 8.0;
-    state[ATH_SIDEA].eep.trgs[2].duration = 10.0;
+    settings.eepid = ath_eeprom_register(&(settings.eep), sizeof(settings.eep));
 
     /* postitions test */
-    state[ATH_SIDEB].eep.trgs[0].inuse    = 1;
-    state[ATH_SIDEB].eep.trgs[0].target   = 2.0;
-    state[ATH_SIDEB].eep.trgs[0].duration = 7.5;
-    state[ATH_SIDEB].eep.trgs[1].inuse    = 1;
-    state[ATH_SIDEB].eep.trgs[1].target   = 5.0;
-    state[ATH_SIDEB].eep.trgs[1].duration = 10.0;
-    state[ATH_SIDEB].eep.trgs[2].inuse    = 1;
-    state[ATH_SIDEB].eep.trgs[2].target   = 8.0;
-    state[ATH_SIDEB].eep.trgs[2].duration = 5.0;
+    //state[ATH_SIDEA].eep.trgs[0].inuse    = 1;
+    //state[ATH_SIDEA].eep.trgs[0].target   = 2.0;
+    //state[ATH_SIDEA].eep.trgs[0].duration = 5.0;
+    //state[ATH_SIDEA].eep.trgs[1].inuse    = 1;
+    //state[ATH_SIDEA].eep.trgs[1].target   = 5.0;
+    //state[ATH_SIDEA].eep.trgs[1].duration = 7.5;
+    //state[ATH_SIDEA].eep.trgs[2].inuse    = 1;
+    //state[ATH_SIDEA].eep.trgs[2].target   = 8.0;
+    //state[ATH_SIDEA].eep.trgs[2].duration = 10.0;
 
+    /* postitions test */
+    //state[ATH_SIDEB].eep.trgs[0].inuse    = 1;
+    //state[ATH_SIDEB].eep.trgs[0].target   = 2.0;
+    //state[ATH_SIDEB].eep.trgs[0].duration = 7.5;
+    //state[ATH_SIDEB].eep.trgs[1].inuse    = 1;
+    //state[ATH_SIDEB].eep.trgs[1].target   = 5.0;
+    //state[ATH_SIDEB].eep.trgs[1].duration = 10.0;
+    //state[ATH_SIDEB].eep.trgs[2].inuse    = 1;
+    //state[ATH_SIDEB].eep.trgs[2].target   = 8.0;
+    //state[ATH_SIDEB].eep.trgs[2].duration = 5.0;
 
 
     /* init structure and state */
     init_panel(&state[ATH_SIDEA], ATH_SIDEA, ATHIN_DOOR, ATHIN_PAPER);
     init_panel(&state[ATH_SIDEB], ATH_SIDEB, ATHIN_DOOR, ATHIN_PAPER);
 
-
-    /* register eeprom entity */
-    //state[ATH_SIDEA].eepid = ath_eeprom_register(&(state[ATH_SIDEA].eep), sizeof(state[ATH_SIDEA].eep));
-    //state[ATH_SIDEB].eepid = ath_eeprom_register(&(state[ATH_SIDEB].eep), sizeof(state[ATH_SIDEB].eep));
 
     /* init semaphore */
     //ath_seminit(&locksem);
@@ -204,6 +198,16 @@ void atspanel_ask(uint8_t side, ATSP_ASK ask) {
         state[side].doing = ATSP_SMANUAL;
     }
 }
+
+void atspanel_stop(uint8_t side, ATSP_ASK ask) {
+    if (ask & ATSP_REFERENCE) { /* beeing asked to stop reference */
+        /* TODO check for problems that might be imcompatible with referencing */
+        if (state[side].doing & ATSP_REFERENCE) { /* if doing it, stop it */
+            state[side].doing  &=  ~ATSP_REFERENCE;
+        }
+    }
+}
+
 
 uint8_t atspanel_isdoing(uint8_t side, ATSP_ASK ask) {
     return (state[side].doing & ask);

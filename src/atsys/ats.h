@@ -74,6 +74,7 @@ void            atspanel_init();
 void            atspanel_update(double dt);
 
 void            atspanel_ask(uint8_t side, ATSP_ASK ask);
+void            atspanel_stop(uint8_t side, ATSP_ASK ask);
 uint8_t         atspanel_isdoing(uint8_t side, ATSP_ASK ask);
 uint8_t         atspanel_mismatched(uint8_t side);
 double          atspanel_getlatestart(uint8_t side);
@@ -123,6 +124,7 @@ typedef enum    ATSUI_M {
                     ATSUI_CONFIGPUB,
                     ATSUI_SETTINGS,
                     ATSUI_LIGHT,
+                    ATSUI_RELAY,
                 ATSUI_MAXSTATES } ATSUI_M;
 #endif
 void            atsui_init();

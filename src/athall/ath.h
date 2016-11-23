@@ -265,6 +265,19 @@ void            athmotor_update(double dt);
 void            athdecoder_init();
 void            athdecoder_update(double dt);
 
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ *                                      ATH:RTC
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* CONFIGS */
+
+/* PARAMETERS */
+
+/* DECLARATIONS */
+
+void            athrtc_init();
+void            athrtc_update(double dt);
+
+
 
 
 

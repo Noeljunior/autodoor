@@ -37,6 +37,7 @@ void athinit() {
 
     /* init modules */
     athtiming_init();
+    athrtc_init();
     athlcd_init();
     athin_init();
     athout_init();
@@ -69,6 +70,8 @@ void athupdate() {
     athwarranty_update(dt);
 
     /* update modules */
+    athrtc_update(dt);
+    athlcd_printf(1, "   %s   ", athin_switchedon(ATHIN_PAPER) ? "yes" : "nope");
     athlcd_update(dt);
     athin_update(dt);
     athout_update(dt);

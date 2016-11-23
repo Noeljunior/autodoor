@@ -36,6 +36,9 @@ void            s_settings(double dt);
 void            s_light_init();
 void            s_light_finish();
 void            s_light(double dt);
+void            s_relay_init();
+void            s_relay_finish();
+void            s_relay(double dt);
 
 void (* initstates[ATSUI_MAXSTATES]) () = {
                     s_auto_init,
@@ -45,6 +48,7 @@ void (* initstates[ATSUI_MAXSTATES]) () = {
                     s_configpubs_init,
                     s_settings_init,
                     s_light_init,
+                    s_relay_init,
                 };
 void (* finishstates[ATSUI_MAXSTATES]) () = {
                     s_auto_finish,
@@ -54,6 +58,7 @@ void (* finishstates[ATSUI_MAXSTATES]) () = {
                     s_configpubs_finish,
                     s_settings_finish,
                     s_light_finish,
+                    s_relay_finish,
                 };
 void (* updatestates[ATSUI_MAXSTATES]) (double) = {
                     s_auto,
@@ -63,6 +68,7 @@ void (* updatestates[ATSUI_MAXSTATES]) (double) = {
                     s_configpubs,
                     s_settings,
                     s_light,
+                    s_relay,
                 };
 
 typedef struct statestack {
@@ -110,6 +116,13 @@ typedef union _svars_u {
         double      blink;
         uint8_t     light;
     } l;
+    /* REALY */
+    struct _srl {
+        int8_t      selector;
+        int8_t      enabled;
+        int8_t      ontime;
+        int8_t      offtime;
+    } rl;
 } statevars;
 statevars       sv = {0};
 
@@ -220,7 +233,7 @@ void s_auto(double dt) {
     if (atspanel_error_check(ATH_SIDEA, ATSP_ERR_DOOR) ||
         atspanel_error_check(ATH_SIDEB, ATSP_ERR_DOOR)) {
         athlcd_printf(0, "      AUTO      ");
-        athlcd_printf(1, "  Door opened   ");
+        athlcd_printf(1, "    Open door   ");
     } else
     if (atspanel_error_check(ATH_SIDEA, ATSP_ERR_PAPER) ||
         atspanel_error_check(ATH_SIDEB, ATSP_ERR_PAPER)) {
@@ -359,8 +372,8 @@ void s_main(double dt) {
     if (athin_clicking(ATHIN_RIGHT)) sv.m.selector++;
     if (athin_clicking(ATHIN_LEFT))  sv.m.selector--;
 
-    if (sv.m.selector < 0) sv.m.selector = 7 - 1;
-    sv.m.selector = abs(sv.m.selector) % (7);
+    if (sv.m.selector < 0) sv.m.selector = 6 - 1;
+    sv.m.selector = abs(sv.m.selector) % (6);
 
     switch (sv.m.selector) {
         case 0: athlcd_printf(1, "> side? %c", ats_wside() == ATH_SIDEA ? 'A' :
@@ -387,23 +400,23 @@ void s_main(double dt) {
             break;
         case 3: athlcd_printf(1, "> relay config");
             if (athin_clicked(ATHIN_OK)) {
-                atsui_changestate(ATSUI_LIGHT);
+                atsui_changestate(ATSUI_RELAY);
                 return;
             }
             break;
-        case 4: athlcd_printf(1, "> SMS");
+        /*case 4: athlcd_printf(1, "> SMS");
+            if (athin_clicked(ATHIN_OK)) {
+                atsui_changestate(ATSUI_SETTINGS);
+                return;
+            }
+            break;*/
+        case 4: athlcd_printf(1, "> settings");
             if (athin_clicked(ATHIN_OK)) {
                 atsui_changestate(ATSUI_SETTINGS);
                 return;
             }
             break;
-        case 5: athlcd_printf(1, "> definicoes");
-            if (athin_clicked(ATHIN_OK)) {
-                atsui_changestate(ATSUI_SETTINGS);
-                return;
-            }
-            break;
-        case 6: athlcd_printf(1, "> exit");
+        case 5: athlcd_printf(1, "> exit");
             if (athin_clicked(ATHIN_OK)) {
                 sv.m.selector = -1;
                 return;
@@ -428,7 +441,16 @@ void s_reference_finish() {
 
 void s_reference(double dt) {
     if (atspanel_isdoing(ats_wside(), ATSP_REFERENCE)) { /* referencing... */
-        sv.r.selector = 1;
+        sv.r.selector = 0;
+        if (athin_pressed(ATHIN_CANCEL)) { /* go back to menu */
+            athlcd_printf(1, "ABORTING...");
+        } else {
+            athlcd_printf(1, "wait...");
+        }
+        if (athin_longpressed(ATHIN_CANCEL)) { /* go back to menu */
+            atspanel_stop(ats_wside(), ATSP_REFERENCE);
+            return;
+        }
         return;
     }
 
@@ -455,6 +477,7 @@ void s_reference(double dt) {
             athlcd_printf(1, "> reference");
             if (athin_clicked(ATHIN_OK)) {
                 atspanel_ask(ats_wside(), ATSP_REFERENCE);
+                athlcd_printf(1, "wait...");
             }
             break;
     }
@@ -683,6 +706,70 @@ void s_settings(double dt) {
         atsui_changestate(ATSUI_MAIN);
         return;
     }
+}
+
+/* * * * * * * * * * * * REALY * * * * * * * * * * * */
+void s_relay_init() {
+    athlcd_clear();
+    athlcd_printf(0, "[     RELAY    ]");
+
+    /* TODO read from eeprom */
+    sv.rl.enabled = 1;
+    sv.rl.ontime  = 17;
+    sv.rl.offtime = 8;
+}
+
+void s_relay_finish() {
+    /* TODO save to eeprom */
+}
+
+void s_relay(double dt) {
+    if (athin_clicked(ATHIN_CANCEL)) { /* go back */
+        atsui_changestate(ATSUI_MAIN);
+        return;
+    }
+
+    if (athin_clicking(ATHIN_RIGHT)) sv.rl.selector++;
+    if (athin_clicking(ATHIN_LEFT))  sv.rl.selector--;
+
+    if (sv.rl.selector < 0) sv.rl.selector = 3 - 1;
+    sv.rl.selector = abs(sv.rl.selector) % (3);
+
+    if (sv.rl.enabled == 0)
+        sv.rl.selector = 0;
+
+    switch (sv.rl.selector) {
+        case 0:
+            athlcd_printf(0, "[R] Enable");
+            athlcd_printf(1, "%16s", sv.rl.enabled ? "yes" : "no");
+            if (athin_clicked(ATHIN_OK)) {
+                sv.rl.enabled ^= 1;
+                return;
+            }
+            break;
+        case 1:
+            athlcd_printf(0, "[R] Turn on");
+            if (athin_clicked(ATHIN_UP))    sv.rl.ontime++;
+            if (athin_clicked(ATHIN_DOWN))  sv.rl.ontime--;
+
+            if (sv.rl.ontime < 16) sv.rl.ontime = 16;
+            if (sv.rl.ontime > 18) sv.rl.ontime = 18;
+
+            athlcd_printf(1, "     %2d:00h", sv.rl.ontime);
+            break;
+        case 2:
+            athlcd_printf(0, "[R] Turn off");
+            if (athin_clicked(ATHIN_UP))    sv.rl.offtime++;
+            if (athin_clicked(ATHIN_DOWN))  sv.rl.offtime--;
+
+            if (sv.rl.offtime < 6) sv.rl.offtime = 6;
+            if (sv.rl.offtime > 8) sv.rl.offtime = 8;
+
+            athlcd_printf(1, "     %2d:00h", sv.rl.offtime);
+            break;
+    }
+
+
 }
 
 
