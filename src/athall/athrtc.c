@@ -198,7 +198,13 @@ void SET_YEAR(uint8_t _year) {
 
 
 typedef struct systime {
-
+    uint8_t     hour;
+    uint8_t     min;
+    uint8_t     sec;
+    uint8_t     mday;
+    uint8_t     mon;
+    uint16_t    year;
+    uint32_t    epoch;
 } systime;
 systime stime;
 
@@ -230,26 +236,6 @@ void athrtc_update(double dt) {
     #define HC(hex) hex = ((hex >> 4) * 10 + (hex & 0x0F))
     #define HTC(hex) ((hex >> 4) * 10 + (hex & 0x0F))
 
-    uint8_t hours = READ_RTC(HOUR_REG);
-    uint8_t minutes = READ_RTC(MIN_REG);
-    uint8_t seconds = READ_RTC(SEC_REG);
-
-    //if (hours & 0x40)
-    //  hours &= 0x1f; //12H
-    //else
-    //  hours &= 0x3f; //24H
-
-    uint8_t days = READ_RTC(DAY_REG);
-    uint8_t months = READ_RTC(MON_REG);
-    uint8_t years = READ_RTC(YEAR_REG);
-
-    //HC(hours);
-    //HC(minutes);
-    //HC(seconds);
-    //HC(days);
-    //HC(months);
-    //HC(years);
-
     /*
     if (year is not divisible by 4) then (it is a common year)
     else if (year is not divisible by 100) then (it is a leap year)
@@ -257,18 +243,31 @@ void athrtc_update(double dt) {
     else (it is a leap year)
     */
 
+    uint8_t hour   = READ_RTC(HOUR_REG);
+    uint8_t min    = READ_RTC(MIN_REG);
+    uint8_t sec    = READ_RTC(SEC_REG);
 
+    uint8_t mday   = READ_RTC(DAY_REG);
+    uint8_t mon    = READ_RTC(MON_REG);
+    uint8_t year   = READ_RTC(YEAR_REG);
+
+    stime.hour = HTC(hour);
+    stime.min  = HTC(min);
+    stime.sec  = HTC(sec);
+
+    stime.mday = HTC(mday);
+    stime.mon  = HTC(mon) -1;
+    stime.year = HTC(year) + 2000;
 
     struct tm t;
-    time_t now;
-    t.tm_year = HTC(years) +2000 - 1900 + 30;
-    t.tm_mon = HTC(months) - 1;           // Month, 0 - jan
-    t.tm_mday = HTC(days);          // Day of the month
-    t.tm_hour = HTC(hours);
-    t.tm_min = HTC(minutes);
-    t.tm_sec = HTC(seconds);
-    t.tm_isdst = 1;        // Is DST on? 1 = yes, 0 = no, -1 = unknown
-    now = mktime(&t);
+    t.tm_hour = stime.hour;
+    t.tm_min  = stime.min;
+    t.tm_sec  = stime.sec;
+    t.tm_mday = stime.mday;
+    t.tm_mon  = stime.mon;
+    t.tm_year = stime.year - 1900 + 30;
+    t.tm_isdst = 1;
+    stime.epoch = mktime(&t);
 
     //1483228800
     // 536544201
@@ -279,18 +278,8 @@ void athrtc_update(double dt) {
     //athlcd_printf(1, "%d/%d/%d %.6f", days, months, years + 2000, dt);
 
     //athlcd_printf(0, "%02x%02x%02x %02x%02x%4x", hours, minutes, seconds, days, months, years+0x2000);
+    //athlcd_printf(0, "%02d%02d%02d %02d%02d%4d", stime.hour, stime.min, stime.sec, stime.mday, stime.mon+1, stime.year);
     //athlcd_printf(1, "%ld; %d", now, HTC(years));
-
-    //struct tm t;
-    //time_t t_of_day;
-    //t.tm_year = 2011-1900;
-    //t.tm_mon = 7;           // Month, 0 - jan
-    //t.tm_mday = 8;          // Day of the month
-    //t.tm_hour = 16;
-    //t.tm_min = 11;
-    //t.tm_sec = 42;
-    //t.tm_isdst = -1;        // Is DST on? 1 = yes, 0 = no, -1 = unknown
-    //t_of_day = mktime(&t);
 
 
 }
@@ -298,6 +287,18 @@ void athrtc_update(double dt) {
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *                                 PUBLIC INTERFACE
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+int8_t athrtc_compare_to_hour(int8_t hour) {
+    if (hour > stime.sec) {
+        return 1;
+    } else
+    if (hour < stime.sec) {
+        return -1;
+    }
+    return 0;
+}
+
+
 
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *

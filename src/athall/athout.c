@@ -73,7 +73,7 @@ void athout_init() {
     outinit(&outs[ATHOUT_RELAY], DIGITAL);
 
 
-    /* ATHOUT_LCDCONTRAST */
+    /* ATHOUT_LCDBL */
     ath_init_setmode(&outs[ATHOUT_LCDBL].pin, GALL(ATHOUT_LCDBL_PIN),
         ATHP_OUTPUT);
     ath_init_pwm(&outs[ATHOUT_LCDBL].pin, ATHOUT_LCDBL_PWM, TOP_F_PS(500ul, 1), 1);

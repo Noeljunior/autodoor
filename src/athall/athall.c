@@ -71,7 +71,7 @@ void athupdate() {
 
     /* update modules */
     athrtc_update(dt);
-    athlcd_printf(1, "   %s   ", athin_switchedon(ATHIN_PAPER) ? "yes" : "nope");
+    //athlcd_printf(1, "   %s   ", athin_switchedon(ATHIN_PAPER) ? "yes" : "nope");
     athlcd_update(dt);
     athin_update(dt);
     athout_update(dt);

@@ -137,6 +137,15 @@ void atspanel_update(double dt) {
     update_panel(dt, &state[ATH_SIDEA]);
     update_panel(dt, &state[ATH_SIDEB]);
 
+
+
+    if (athrtc_compare_to_hour(10) <= 0) { // ON
+    
+    } else
+    if (athrtc_compare_to_hour(30) >= 0) { // OFF
+        
+    }
+
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -279,21 +288,6 @@ uint8_t atspanel_counttrgs_useful(uint8_t side) {
     return c;
 }
 
-//void atspanel_copytrgs(atsp_target * src, atsp_target * dst) {
-//    uint8_t i;
-//    for (i = 0; i < ATSP_MAXTARGETS; i++) {
-//        dst[i] = src[i];
-//    }
-//}
-
-//void atspanel_savetargets(uint8_t side) {
-
-    //uint8_t i;
-    //for (i = 0; i < ATSP_MAXTARGETS; i++) {
-    //    state[side].trgs[i] = state[side].aref.trgs[i];
-    //}
-//}
-
 void atspanel_walk(uint8_t side, uint8_t keyup, uint8_t keydown, uint8_t slow) {
     if (athin_clicked(keyup) || athin_longclicked(keyup)) {
         athmotor_gos(ats_wside(), ATHM_UP, slow ? ATHM_SLOW : ATHM_NORMAL);
@@ -434,7 +428,7 @@ uint8_t getnexti_greedy(atsp_target * t, int8_t i, int8_t *dir) {
 }
 
 
-void update_panel(double dt, pstate * s) { //athlcd_printf(0, "%d", sizeof(s->eep));
+void update_panel(double dt, pstate * s) {
     /* do what is suposed to be doing */
     if (s->doing & ATSP_OFF) { /* stop motors */
         athmotor_go(s->side, ATHM_STOP | ATHM_HARD);
@@ -610,21 +604,6 @@ uint8_t reference(pstate * s, double dt) {
     } else
     if (r->state  == 5) { /* wait for reach the begining and exit */
         if (athmotor_targeted(s->side)) {
-            /* interpolate how many pages are here TODO ouside of here */
-            //double est = (r->lenght - INTER_PRE - INTER_POS) / INTER_PAGE;
-            //uint8_t i;
-            //for (i = 0; i < ATSP_MAXTARGETS; i++) {
-            //    if (i < est) {
-            //        r->trgs[i].inuse    = 1;
-            //        r->trgs[i].target   =
-            //            LIMIT_CALIB + INTER_PRE + INTER_PAGE * i;
-            //        r->trgs[i].duration = 0.0;
-            //    } else { /* reset */
-            //        r->trgs[i].inuse    = 0;
-            //        r->trgs[i].target   = 0.0;
-            //        r->trgs[i].duration = 0.0;
-            //    }
-            //}
             /* check if they match */
             if (fabs(s->eep.lenght - r->lenght) <
                     ATSP_MISMATCH_THRESHOLD) {
@@ -632,11 +611,7 @@ uint8_t reference(pstate * s, double dt) {
                 atspanel_error_add(s->side, ATSP_ERR_PLENMIS);
             }
 
-            /* copy values to the panel's settings struct */
-            //settings.limit_start[s->side] = r->limit_start;
-            //settings.limit_end[s->side]   = r->limit_end;
-            //settings.lenght[s->side]      = r->lenght;
-
+            /* save panel's lenght */
             s->eep.lenght = r->lenght;
 
             /* tell the moters its limits */

@@ -79,6 +79,12 @@ uint32_t        athtiming_ms();
 uint32_t        athtiming_us();
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ *                                      ATH:RTC
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+int8_t          athrtc_compare_to_hour(int8_t hour);
+
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *                                      ATH:LCD
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 void            athlcd_printf(uint8_t line, const char * format, ...);

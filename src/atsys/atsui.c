@@ -694,7 +694,7 @@ void s_configpubs(double dt) {
 /* * * * * * * * * * * * SETTINGS * * * * * * * * * * * */
 void s_settings_init() {
     athlcd_clear();
-    athlcd_printf(0, "DEFINICOES");
+    athlcd_printf(0, "[   SETTINGS   ]");
 }
 
 void s_settings_finish() {
@@ -737,6 +737,12 @@ void s_relay(double dt) {
 
     if (sv.rl.enabled == 0)
         sv.rl.selector = 0;
+
+    if (sv.rl.enabled) {
+        athout_on(ATHOUT_RELAY);
+    } else {
+        athout_off(ATHOUT_RELAY);
+    }
 
     switch (sv.rl.selector) {
         case 0:
