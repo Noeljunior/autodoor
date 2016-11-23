@@ -111,6 +111,9 @@ void            atspanel_trgs_reload(uint8_t side);
 void            atspanel_globset_save();
 void            atspanel_globset_reload();
 
+void            atspanel_relay(int8_t enable, int8_t on, int8_t off);
+void            atspanel_relay_get(int8_t * enable, int8_t * on, int8_t * off);
+
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *                                      ATS:UI
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */

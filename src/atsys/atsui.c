@@ -340,35 +340,6 @@ void s_main(double dt) {
         return;
     }
 
-    /* check and ask for each panel to config */
-    //if (ats_wside() < 0) { /* no side selected */
-    //    if (athin_clicking(ATHIN_RIGHT)) sv.m.selector++;
-    //    if (athin_clicking(ATHIN_LEFT))  sv.m.selector--;
-
-    //    if (sv.m.selector < 0) sv.m.selector = 2 - 1;
-    //    sv.m.selector = abs(sv.m.selector) % (2);
-
-    //    switch (sv.m.selector) {
-    //        case 0: athlcd_printf(1, "Side A");
-    //            if (athin_clicked(ATHIN_OK)) {
-    //                ats_setwside(ATH_SIDEA);
-    //                sv.m.selector = 0;
-    //                return;
-    //            }
-    //            break;
-    //        case 1: athlcd_printf(1, "Side B");
-    //            if (athin_clicked(ATHIN_OK)) {
-    //                ats_setwside(ATH_SIDEB);
-    //                sv.m.selector = 0;
-    //                return;
-    //            }
-    //            break;
-    //    }
-
-    //    return;
-    //}
-
-
     if (athin_clicking(ATHIN_RIGHT)) sv.m.selector++;
     if (athin_clicking(ATHIN_LEFT))  sv.m.selector--;
 
@@ -376,8 +347,8 @@ void s_main(double dt) {
     sv.m.selector = abs(sv.m.selector) % (6);
 
     switch (sv.m.selector) {
-        case 0: athlcd_printf(1, "> side? %c", ats_wside() == ATH_SIDEA ? 'A' :
-            (ats_wside() == ATH_SIDEB ? 'B' : '-'));
+        case 0: //athlcd_printf(1, "> side? %c", ats_wside() == ATH_SIDEA ? 'A' :
+            //(ats_wside() == ATH_SIDEB ? 'B' : '-'));
             if (athin_clicked(ATHIN_OK)) {
                 if (ats_wside() == ATH_SIDEA) {
                     ats_setwside(ATH_SIDEB);
@@ -536,8 +507,8 @@ void s_freecontrol(double dt) {
     }
 
 
-    athlcd_printf(1, "%6.2fr %5.2frps", athdecoder_position(ats_wside()),
-        athdecoder_rps(ats_wside()));
+    //athlcd_printf(1, "%6.2fr %5.2frps", athdecoder_position(ats_wside()),
+    //    athdecoder_rps(ats_wside()));
 
 }
 
@@ -713,14 +684,13 @@ void s_relay_init() {
     athlcd_clear();
     athlcd_printf(0, "[     RELAY    ]");
 
-    /* TODO read from eeprom */
-    sv.rl.enabled = 1;
-    sv.rl.ontime  = 17;
-    sv.rl.offtime = 8;
+    /* read from eeprom */
+    atspanel_relay_get(&sv.rl.enabled, &sv.rl.ontime, &sv.rl.offtime);
 }
 
 void s_relay_finish() {
-    /* TODO save to eeprom */
+    /* save to eeprom */
+    atspanel_relay(sv.rl.enabled, sv.rl.ontime, sv.rl.offtime);
 }
 
 void s_relay(double dt) {
@@ -769,7 +739,7 @@ void s_relay(double dt) {
             if (athin_clicked(ATHIN_DOWN))  sv.rl.offtime--;
 
             if (sv.rl.offtime < 6) sv.rl.offtime = 6;
-            if (sv.rl.offtime > 8) sv.rl.offtime = 8;
+            if (sv.rl.offtime > 9) sv.rl.offtime = 9;
 
             athlcd_printf(1, "     %2d:00h", sv.rl.offtime);
             break;

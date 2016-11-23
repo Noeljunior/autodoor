@@ -27,8 +27,9 @@ typedef struct syssettings {
 
     struct eep {
         uint16_t        gloset;
-        uint16_t        relayon;
-        uint16_t        relayoff;
+        uint8_t         relayen;
+        uint8_t         relayon;
+        uint8_t         relayoff;
         //uint64_t    lastktime;
     } eep;
     int8_t          eepid;
@@ -91,7 +92,9 @@ uint8_t     reference(pstate * s, double dt);
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 void atspanel_init() {
     /* init panel settings */
-    settings.eep.gloset = ATSP_DOUBLESIDE | ATSP_RELAY;
+    settings.eep.gloset   = ATSP_DOUBLESIDE | ATSP_RELAY;
+    settings.eep.relayon  = 16;
+    settings.eep.relayoff = 9;
 
     /* register eeprom object */
     settings.eepid = ath_eeprom_register(&(settings.eep), sizeof(settings.eep));
@@ -132,18 +135,16 @@ void atspanel_init() {
 void atspanel_update(double dt) {
     /* TODO control both panel in mutual exclusion */
 
-    //athlcd_printf(0, "%d, %d", state[ATH_SIDEA].eepid, state[ATH_SIDEB].eepid);
-
     update_panel(dt, &state[ATH_SIDEA]);
     update_panel(dt, &state[ATH_SIDEB]);
 
-
-
-    if (athrtc_compare_to_hour(10) <= 0) { // ON
-    
-    } else
-    if (athrtc_compare_to_hour(30) >= 0) { // OFF
-        
+    /* relay control */
+    if ((settings.eep.gloset & ATSP_RELAY) &&
+        (athrtc_compare_to_hour(settings.eep.relayon) <= 0 ||
+        athrtc_compare_to_hour(settings.eep.relayoff) > 0)) {   // ON
+        athout_on(ATHOUT_RELAY);
+    } else {                                                    // OFF
+        athout_off(ATHOUT_RELAY);
     }
 
 }
@@ -290,6 +291,7 @@ uint8_t atspanel_counttrgs_useful(uint8_t side) {
 
 void atspanel_walk(uint8_t side, uint8_t keyup, uint8_t keydown, uint8_t slow) {
     if (athin_clicked(keyup) || athin_longclicked(keyup)) {
+        athlcd_printf(1, "merda");
         athmotor_gos(ats_wside(), ATHM_UP, slow ? ATHM_SLOW : ATHM_NORMAL);
     } else
     if (athin_clicked(keydown) || athin_longclicked(keydown)) {
@@ -388,6 +390,29 @@ void atspanel_globset_reload() {
     ath_eeprom_reload(settings.eepid);
 }
 
+void atspanel_relay(int8_t enable, int8_t on, int8_t off) {
+    if (enable) {
+        settings.eep.gloset |= ATSP_RELAY;
+    } else {
+        settings.eep.gloset &= ~ATSP_RELAY;
+    }
+
+    settings.eep.relayon  = on;
+    settings.eep.relayoff = off;
+
+    atspanel_globset_save();
+}
+
+void atspanel_relay_get(int8_t * enable, int8_t * on, int8_t * off) {
+    if (settings.eep.gloset & ATSP_RELAY) {
+        *enable = 1;
+    } else {
+        *enable = 0;
+    }
+
+    *on  = settings.eep.relayon;
+    *off = settings.eep.relayoff;
+}
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *                               PRIVATE FUNCTIONS
