@@ -289,10 +289,10 @@ void athrtc_update(double dt) {
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 int8_t athrtc_compare_to_hour(int8_t hour) {
-    if (hour > stime.sec) {
+    if (hour > stime.hour) {
         return 1;
     } else
-    if (hour < stime.sec) {
+    if (hour < stime.hour) {
         return -1;
     }
     return 0;

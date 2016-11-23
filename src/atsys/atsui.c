@@ -347,8 +347,8 @@ void s_main(double dt) {
     sv.m.selector = abs(sv.m.selector) % (6);
 
     switch (sv.m.selector) {
-        case 0: //athlcd_printf(1, "> side? %c", ats_wside() == ATH_SIDEA ? 'A' :
-            //(ats_wside() == ATH_SIDEB ? 'B' : '-'));
+        case 0: athlcd_printf(1, "> side? %c", ats_wside() == ATH_SIDEA ? 'A' :
+            (ats_wside() == ATH_SIDEB ? 'B' : '-'));
             if (athin_clicked(ATHIN_OK)) {
                 if (ats_wside() == ATH_SIDEA) {
                     ats_setwside(ATH_SIDEB);
@@ -707,12 +707,6 @@ void s_relay(double dt) {
 
     if (sv.rl.enabled == 0)
         sv.rl.selector = 0;
-
-    if (sv.rl.enabled) {
-        athout_on(ATHOUT_RELAY);
-    } else {
-        athout_off(ATHOUT_RELAY);
-    }
 
     switch (sv.rl.selector) {
         case 0:
