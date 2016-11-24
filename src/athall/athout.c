@@ -7,7 +7,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *                               PRIVATE DECLARATIONS
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-#define FREQUENCYOUT    30
+#define FREQUENCYOUT    60
 #define TIMEREPEAT      -1.0
 
 /* MODE STATES */
@@ -25,6 +25,7 @@ typedef enum    state {
                     ON,
                     BLINK,
                     SEQUENCE,
+                    MUSIC,
                 } state;
 
 typedef struct {
@@ -35,7 +36,11 @@ typedef struct {
     //uint8_t     state;
     /* effect control */
     double      dt;
-    uint16_t    i;
+    int16_t     i;
+
+    note *      music;
+    double      tempo;
+    uint8_t     notes;
 
     /* self blinking */
     double      f;
@@ -56,6 +61,78 @@ double      SEQ_3BIP[] =  {0.1, 0.1, 0.1, 0.1};
 
 ATH_UPL_DECLARE(waitout);
 
+
+
+note europe[] = {
+    {ATHM_E5, ATHM_C},
+    {ATHM_E5, ATHM_C},
+    {ATHM_F5, ATHM_C},
+    {ATHM_G5, ATHM_C},
+    {ATHM_G5, ATHM_C},
+    {ATHM_F5, ATHM_C},
+    {ATHM_E5, ATHM_C},
+    {ATHM_D5, ATHM_C},
+    {ATHM_C5, ATHM_C},
+    {ATHM_C5, ATHM_C},
+    {ATHM_D5, ATHM_C},
+    {ATHM_E5, ATHM_C},
+    {ATHM_E5, ATHM_C | ATHM_H},
+    {ATHM_D5, ATHM_Q},
+    {ATHM_D5, ATHM_M},
+    
+    {ATHM_E5, ATHM_C},
+    {ATHM_E5, ATHM_C},
+    {ATHM_F5, ATHM_C},
+    {ATHM_G5, ATHM_C},
+    {ATHM_G5, ATHM_C},
+    {ATHM_F5, ATHM_C},
+    {ATHM_E5, ATHM_C},
+    {ATHM_D5, ATHM_C},
+    {ATHM_C5, ATHM_C},
+    {ATHM_C5, ATHM_C},
+    {ATHM_D5, ATHM_C},
+    {ATHM_E5, ATHM_C},
+    {ATHM_D5, ATHM_C | ATHM_H},
+    {ATHM_C5, ATHM_Q},
+    {ATHM_C5, ATHM_M},
+
+    
+    {ATHM_D5, ATHM_C},
+    {ATHM_D5, ATHM_C},
+    {ATHM_E5, ATHM_C},
+    {ATHM_C5, ATHM_C},
+    {ATHM_D5, ATHM_C},
+    {ATHM_E5, ATHM_Q},
+    {ATHM_F5, ATHM_Q},
+    {ATHM_E5, ATHM_C},
+    {ATHM_C5, ATHM_C},
+    {ATHM_D5, ATHM_C},
+    {ATHM_E5, ATHM_Q},
+    {ATHM_F5, ATHM_Q},
+    {ATHM_E5, ATHM_C},
+    {ATHM_D5, ATHM_C},
+    {ATHM_C5, ATHM_C},
+    {ATHM_D5, ATHM_C},
+    {ATHM_G4, ATHM_M},
+    
+    {ATHM_E5, ATHM_C},
+    {ATHM_E5, ATHM_C},
+    {ATHM_F5, ATHM_C},
+    {ATHM_G5, ATHM_C},
+    {ATHM_G5, ATHM_C},
+    {ATHM_F5, ATHM_C},
+    {ATHM_E5, ATHM_C},
+    {ATHM_D5, ATHM_C},
+    {ATHM_C5, ATHM_C},
+    {ATHM_C5, ATHM_C},
+    {ATHM_D5, ATHM_C},
+    {ATHM_E5, ATHM_C},
+    {ATHM_D5, ATHM_C | ATHM_H},
+    {ATHM_C5, ATHM_Q},
+    {ATHM_C5, ATHM_M}
+};
+uint8_t europe_size = sizeof(europe)/sizeof(note);
+
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *                                  HAL INTERFACE
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -66,6 +143,8 @@ void athout_init() {
         ATHP_OUTPUT);
     ath_init_pwm(&outs[ATHOUT_SPEAKER].pin, ATHOUT_SPEAKER_PWM,
         TOP_F_PS(ATHOUT_SPEAKER_FREQ_HZ, 1), 1);
+    outinit(&outs[ATHOUT_SPEAKER], PWM);
+    //ath_pin_pwm(&outs[ATHOUT_SPEAKER].pin, 0.5);
 
     /* ATHOUT_RELAY */
     ath_init_setmode(&outs[ATHOUT_RELAY].pin, GALL(ATHOUT_RELAY_PIN),
@@ -78,7 +157,7 @@ void athout_init() {
         ATHP_OUTPUT);
     ath_init_pwm(&outs[ATHOUT_LCDBL].pin, ATHOUT_LCDBL_PWM, TOP_F_PS(500ul, 1), 1);
 
-    ath_pin_pwm(&outs[ATHOUT_LCDBL].pin, 0.8);
+    ath_pin_pwm(&outs[ATHOUT_LCDBL].pin, 0.5);
 
     /* ATHOUT_LCDCONTRAST */
     ath_init_setmode(&outs[ATHOUT_LCDCONTRAST].pin, GALL(ATHOUT_LCDCONTRAST_PIN),
@@ -95,7 +174,7 @@ void athout_update(double dt) {
     //ath_pin_high(&outs[ATHOUT_LED2].pin);
     int i;
 
-    //ATH_UPL_CHECK(waitout, FREQUENCY);
+    ATH_UPL_CHECK(waitout, FREQUENCYOUT);
 
     for (i = 0; i < ATHOUT_MAX; i++) {
         if (outs[i].mode == PWM) {
@@ -105,7 +184,7 @@ void athout_update(double dt) {
         }
     }
 
-    //ATH_UPL_RESET(wait);
+    ATH_UPL_RESET(waitout);
 }
 
 
@@ -156,11 +235,32 @@ void athout_sequence(uint8_t out, double * v, uint16_t vs, uint8_t r) {
     }
 }
 
+void athout_music(uint8_t out, note * music, uint8_t notes, double tempo) {
+    if (outs[out].state == MUSIC) {
+        return;
+    }
+
+    outs[out].state  = MUSIC;
+    outs[out].dt  = 0.0;
+    outs[out].tempo  = tempo;
+    outs[out].music  = music;
+    outs[out].i  = -1;
+    outs[out].notes  = notes;
+}
+
 void athout_dc(uint8_t out, double dc) {
     if (outs[out].mode != PWM) return;
 
     ath_pin_pwm(&outs[out].pin, dc);
 }
+
+void athout_freq(uint8_t out, double f) {
+    if (outs[out].mode != PWM) return;
+
+    ath_pin_pwm_freq(&outs[out].pin, f, 0.5);
+}
+
+
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *                                 PRIVATE FUNCTIONS
@@ -240,6 +340,32 @@ void outupdate(out * o, double dt) {
 }
 
 void outupdate_pwm(out * o, double dt) {
+    if (o->state == MUSIC) {
+        o->dt -= dt;
+        if (o->dt <= 0.0) { /* next note */
+            o->i++;
+
+            if (o->i >= o->notes) {
+                o->state = OFF;
+                ath_pin_pwm_freq(&o->pin, 500, 0.0);
+                return;
+            }
+
+            o->dt += (1.0 / (double) (o->music[o->i].t & 0x1f)) *
+                (9.0 / o->tempo);
+            if (o->music[o->i].t & ATHM_H) {
+                o->dt *= 1.5;
+            }
+        }
+
+        double f = 440.0 * pow((1.059463094359), o->music[o->i].f);
+        double dc = 0.5;
+
+        if (o->dt < (9.0 / o->tempo) / 64.0) {
+            dc = 0.0;
+        }
+        ath_pin_pwm_freq(&o->pin, f, dc);
+    }
 
 }
 

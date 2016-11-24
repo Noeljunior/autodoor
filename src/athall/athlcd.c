@@ -105,7 +105,7 @@ void athlcd_init() {
 }
 
 void athlcd_update(double dt) {
-    //ATH_UPL_CHECK(wait, FPS);
+    ATH_UPL_CHECK(wait, FPS);
 
     if (!doupdate) return;
     doupdate = 0;
@@ -121,7 +121,7 @@ void athlcd_update(double dt) {
     for (i = 0; i < 16; i++)
         writeword(lcddbuffer[1][i]);
 
-    //ATH_UPL_RESET(wait);
+    ATH_UPL_RESET(wait);
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *

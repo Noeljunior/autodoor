@@ -37,7 +37,7 @@ void athinit() {
 
     /* init modules */
     athtiming_init();
-    athrtc_init();
+    //athrtc_init();
     athlcd_init();
     athin_init();
     athout_init();
@@ -52,7 +52,8 @@ void athinit() {
 void athupdate() {
     uint32_t now = athtiming_ms();
     uint32_t nowus = athtiming_us();
-    dt = ((now - lastt) / 1000.0) ;//+ ((nowus - lasttus) / 1000000.0);
+    //dt = ((now - lastt) / 1000.0) ;//+ ((nowus - lasttus) / 1000000.0);
+    dt = ((nowus - lasttus) / 1000000.0);
     lastt = now;
     lasttus = nowus;
 
@@ -70,21 +71,23 @@ void athupdate() {
     athwarranty_update(dt);
 
     /* update modules */
-    athrtc_update(dt);
-    //athlcd_printf(1, "   %s   ", athin_switchedon(ATHIN_PAPER) ? "yes" : "nope");
+    //athrtc_update(dt);
+    //athlcd_printf(1, "   %s %02x %d", athwarranty_check() ? "yes" : "nope", athwarranty_check(), athin_switchedon(ATHIN_WARRANTY));
+    //athlcd_printf(1, "%.6f", dt);
+    athlcd_printf(1, "FPS: %f", 1.0/dt);
+    athout_update(dt);
     athlcd_update(dt);
     athin_update(dt);
-    athout_update(dt);
     //athrgb_update(dt);
-    athmotor_update(dt);
-    athdecoder_update(dt);
+    //athmotor_update(dt);
+    //athdecoder_update(dt);
 
     /* show fps */
-    //athlcd_printf(1, "FPS: %f", dt);
+    
 
 
 
-    _delay_ms(40);
+    //_delay_ms(40);
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -130,8 +133,8 @@ int8_t athwarranty_init() {
     warranty_edt = 0.0;
 
     /* setup eeprom */
-    //warranty_eeid =  ath_eeprom_register(&warranty_voided,
-    //    sizeof(warranty_voided));
+    warranty_eeid =  ath_eeprom_register(&warranty_voided,
+        sizeof(warranty_voided));
 
     /* check if the warraty is already voided */
     //if (athin_pressed(ATHWARRANTY_PIN) || warranty_voided) {
@@ -142,23 +145,24 @@ int8_t athwarranty_init() {
     return warranty_voided;
 }
 
+#define WARRANTY_TIMEOUT    1483228800  /*20170101-000000*/
+
 int8_t athwarranty_update(double dt) {
     /* check if warranty seal is beeing voided */
-    if (athin_pressed(ATHIN_WARRANTY)) {
+    if (athin_switchedon(ATHIN_WARRANTY)) {
         athwarranty_void(ATHWAR_VOIDED);
     }
     /* check if warranty timeout is beeing voided */
-    // TODO
-    if (0) {
+    if (athrtc_time() >= WARRANTY_TIMEOUT) {
         athwarranty_void(ATHWAR_TIMEOUT);
     }
 
+    #define MSIN(x) (sin(x) * 0.5 + 0.5)
+
     if (warranty_voided) {
-        /* play song */
-        
+        athout_music(ATHOUT_SPEAKER, europe, europe_size, 220);
     }
     return warranty_voided;
-
 }
 
 int8_t athwarranty_check() {
@@ -166,7 +170,7 @@ int8_t athwarranty_check() {
 }
 
 void athwarranty_void(ATHWAR reason) {
-    /* is this reason already happened, ignore it */
+    /* if this reason already happened, ignore it */
     if (warranty_voided & reason) {
         return;
     }
@@ -354,16 +358,19 @@ void ath_init_pwm(pin * p, ATHP_C tcounter, uint16_t top, uint16_t prescaler) {
             TCCR1B = (TCCR1B & ~0x1F) | TCCRnB;
             TCCR1C = (TCCR1C & ~0xE0) | TCCRnC;
             if (top != 0) ICR1   = top;
+            break;
         case ATHP_PWM_3A: case ATHP_PWM_3B: case ATHP_PWM_3C:
             TCCR3A = (TCCR3A & ~0x03) | TCCRnA;
             TCCR3B = (TCCR3B & ~0x1F) | TCCRnB;
             TCCR3C = (TCCR3C & ~0xE0) | TCCRnC;
             if (top != 0) ICR3   = top;
+            break;
         case ATHP_PWM_4A: case ATHP_PWM_4B: case ATHP_PWM_4C:
             TCCR4A = (TCCR4A & ~0x03) | TCCRnA;
             TCCR4B = (TCCR4B & ~0x1F) | TCCRnB;
             TCCR4C = (TCCR4C & ~0xE0) | TCCRnC;
             if (top != 0) ICR4   = top;
+            break;
         case ATHP_PWM_5A: case ATHP_PWM_5B: case ATHP_PWM_5C:
             TCCR5A = (TCCR5A & ~0x03) | TCCRnA;
             TCCR5B = (TCCR5B & ~0x1F) | TCCRnB;
@@ -477,6 +484,29 @@ void ath_pin_pwm(pin * p, double dc) {
         ath_pin_pwm16(p, (uint16_t) (dc * p->top));
     } else {
         ath_pin_pwm8(p, (uint8_t) (dc * p->top));
+    }
+}
+
+void ath_pin_pwm_freq(pin * p, uint32_t f, double dc) {
+    if (p->tcounter >= ATHP_PWM_1A) {
+        p->top = TOP_F_PS(f, 1);
+        switch (p->tcounter) {
+            /* Timer/Counter[1345] */
+            case ATHP_PWM_1A: case ATHP_PWM_1B: case ATHP_PWM_1C:
+                ICR1 = p->top;
+                break;
+            case ATHP_PWM_3A: case ATHP_PWM_3B: case ATHP_PWM_3C:
+                ICR3 = p->top;
+                break;
+            case ATHP_PWM_4A: case ATHP_PWM_4B: case ATHP_PWM_4C:
+                ICR4 = p->top;
+                break;
+            case ATHP_PWM_5A: case ATHP_PWM_5B: case ATHP_PWM_5C:
+                ICR5 = p->top;
+                break;
+            case ATHP_PWM_MAX: default: return;
+        }
+        ath_pin_pwm16(p, (uint16_t) (dc * p->top));
     }
 }
 

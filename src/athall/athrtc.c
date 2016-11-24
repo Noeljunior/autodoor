@@ -227,7 +227,7 @@ void athrtc_init() {
       SET_MON(12);
       SET_DAY(31);
       SET_HOUR(23);
-      SET_MIN(59);
+      SET_MIN(50);
       SET_SEC(50);
 
 }
@@ -298,6 +298,9 @@ int8_t athrtc_compare_to_hour(int8_t hour) {
     return 0;
 }
 
+int32_t athrtc_time() {
+    return stime.epoch;
+}
 
 
 

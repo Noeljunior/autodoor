@@ -5,6 +5,8 @@
     - implement some kind of global error and panel error
 */
 
+#define UPDATE_FREQUENCY        60.0
+
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *                               PRIVATE DECLARATIONS
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -84,7 +86,7 @@ void athin_init() {
     /* ATHIN_WARRANTY */
     btns[ATHIN_WARRANTY].mode = SWITCH;
     ath_init_setmode(&btns[ATHIN_WARRANTY].pin, GALL(ATHIN_WARRANTY_PIN),
-        ATHP_INPUT | ATHP_SET_PULLUP | ATHP_INVERT);
+        ATHP_INPUT | ATHP_SET_PULLUP);
 }
 
 
@@ -145,6 +147,9 @@ uint8_t athin_switchedon(uint8_t in) {
 
 void update_in(double dt, inbutton * in) {
     uint8_t read;
+
+    static double wait;
+    ATH_UPL_CHECK(wait, UPDATE_FREQUENCY);
 
     /* analog read */
     if (in->mode & (uint8_t) ANALOG) {
@@ -216,5 +221,6 @@ void update_in(double dt, inbutton * in) {
             return;
          }
     }
+    ATH_UPL_RESET(wait);
 }
 

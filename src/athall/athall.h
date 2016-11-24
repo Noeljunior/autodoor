@@ -82,6 +82,7 @@ uint32_t        athtiming_us();
  *                                      ATH:RTC
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 int8_t          athrtc_compare_to_hour(int8_t hour);
+int32_t         athrtc_time();
 
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -137,11 +138,53 @@ typedef enum    ATHOUT {
                 ATHOUT_MAX } ATHOUT;
 #endif
 
+#ifndef TD_ATHM_S_
+#define TD_ATHM_S_
+typedef struct note {
+    int8_t f;
+    uint8_t t;
+} note;
+#endif
+
+#ifndef TD_ATHM_N_
+#define TD_ATHM_N_
+typedef enum    ATHMN {
+                    ATHM_G4             = -2,
+                    ATHM_A4             = 0,
+                    ATHM_B4             = 2,
+                    ATHM_C5             = 3,
+                    ATHM_D5             = 5,
+                    ATHM_E5             = 7,
+                    ATHM_F5             = 8,
+                    ATHM_G5             = 10,
+                    ATHM_A5             = 13,
+                    ATHM_B5             = 14,
+                ATHMN_MAX } ATHMN;
+#endif
+#ifndef TD_ATHM_T_
+#define TD_ATHM_T_
+typedef enum    ATHMT {
+                    ATHM_SB             = 1,
+                    ATHM_M              = 2,
+                    ATHM_C              = 4,
+                    ATHM_Q              = 8,
+                    ATHM_H              = 1 << 5,
+                    ATHM_ST             = 1 << 6,
+                    ATHM_F              = 1 << 7,
+                ATHMT_MAX } ATHMT;
+#endif
+
+extern note europe[];
+extern uint8_t europe_size;
+
+
 void            athout_on(uint8_t out);
 void            athout_off(uint8_t out);
 void            athout_blink(uint8_t out, double f, double t, uint8_t r);
 void            athout_sequence(uint8_t out, double * v, uint16_t vs, uint8_t r);
+void            athout_music(uint8_t out, note * music, uint8_t notes, double tempo);
 void            athout_dc(uint8_t out, double dc);
+void            athout_freq(uint8_t out, double f);
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *                                      ATH:RGB

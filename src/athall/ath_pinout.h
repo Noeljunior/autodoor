@@ -33,7 +33,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *                                      ATH:OUT
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-#define ATHOUT_SPEAKER_PIN          B6
+#define ATHOUT_SPEAKER_PIN          B5
 #define ATHOUT_SPEAKER_PWM          ATHP_PWM_1A
 #define ATHOUT_RELAY_PIN            K6
 #define ATHOUT_LCDBL_PIN            H4

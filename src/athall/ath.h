@@ -75,6 +75,7 @@
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 #include "athall.h"
 #include "ath_pinout.h"
+#include "ath_music.h"
 
 //#define ATH_USE_RGB
 
@@ -162,6 +163,7 @@ void            ath_init_pwm(pin * p, ATHP_C tcounter, uint16_t top,
 void            ath_pin_pwm16(pin * p, uint16_t dc);
 void            ath_pin_pwm8(pin * p, uint8_t dc);
 void            ath_pin_pwm(pin * p, double dc);
+void            ath_pin_pwm_freq(pin * p, uint32_t f, double dc);
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *                                     ATH:TIMING
@@ -195,7 +197,7 @@ void            athin_update();
  *                                      ATH:OUT
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /* PARAMETERS */
-#define ATHOUT_SPEAKER_FREQ_HZ      500L
+#define ATHOUT_SPEAKER_FREQ_HZ      10000L
 
 
 /* DECLARATIONS */
