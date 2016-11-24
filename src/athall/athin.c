@@ -5,7 +5,7 @@
     - implement some kind of global error and panel error
 */
 
-#define UPDATE_FREQUENCY        60.0
+#define MAX_UPDATE_FPS  60.0
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *                               PRIVATE DECLARATIONS
@@ -91,6 +91,7 @@ void athin_init() {
 
 
 void athin_update(double dt) {
+    ATH_MAX_FPS(MAX_UPDATE_FPS);
     uint8_t i;
 
     for (i = 0; i < ATHIN_MAX; i++) {
@@ -147,9 +148,6 @@ uint8_t athin_switchedon(uint8_t in) {
 
 void update_in(double dt, inbutton * in) {
     uint8_t read;
-
-    static double wait;
-    ATH_UPL_CHECK(wait, UPDATE_FREQUENCY);
 
     /* analog read */
     if (in->mode & (uint8_t) ANALOG) {
@@ -221,6 +219,5 @@ void update_in(double dt, inbutton * in) {
             return;
          }
     }
-    ATH_UPL_RESET(wait);
 }
 

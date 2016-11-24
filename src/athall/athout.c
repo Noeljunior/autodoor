@@ -7,7 +7,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *                               PRIVATE DECLARATIONS
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-#define FREQUENCYOUT    60
+#define MAX_UPDATE_FPS  60.0
 #define TIMEREPEAT      -1.0
 
 /* MODE STATES */
@@ -58,9 +58,6 @@ void            outupdate_pwm(out * o, double dt);
 
 double      SEQ_2BIP[] =  {0.1, 0.9, 0.1, 0.9};
 double      SEQ_3BIP[] =  {0.1, 0.1, 0.1, 0.1};
-
-ATH_UPL_DECLARE(waitout);
-
 
 
 note europe[] = {
@@ -156,25 +153,29 @@ void athout_init() {
     ath_init_setmode(&outs[ATHOUT_LCDBL].pin, GALL(ATHOUT_LCDBL_PIN),
         ATHP_OUTPUT);
     ath_init_pwm(&outs[ATHOUT_LCDBL].pin, ATHOUT_LCDBL_PWM, TOP_F_PS(500ul, 1), 1);
-
-    ath_pin_pwm(&outs[ATHOUT_LCDBL].pin, 0.5);
+    outinit(&outs[ATHOUT_LCDBL], PWM);
+    //ath_pin_pwm(&outs[ATHOUT_LCDBL].pin, 1.0);
 
     /* ATHOUT_LCDCONTRAST */
     ath_init_setmode(&outs[ATHOUT_LCDCONTRAST].pin, GALL(ATHOUT_LCDCONTRAST_PIN),
-        ATHP_OUTPUT);
+        ATHP_OUTPUT | ATHP_INVERT);
     ath_init_pwm(&outs[ATHOUT_LCDCONTRAST].pin, ATHOUT_LCDCONTRAST_PWM, 0, 1);
+    outinit(&outs[ATHOUT_LCDCONTRAST], PWM);
 
-    ath_pin_pwm(&outs[ATHOUT_LCDCONTRAST].pin, 0.25);
-
+    //ath_pin_pwm(&outs[ATHOUT_LCDCONTRAST].pin, 0.25);
 
 }
 
 
 void athout_update(double dt) {
-    //ath_pin_high(&outs[ATHOUT_LED2].pin);
+    ATH_MAX_FPS(MAX_UPDATE_FPS);
+
     int i;
 
-    ATH_UPL_CHECK(waitout, FREQUENCYOUT);
+    static uint8_t blocked = 0;
+    if (athwarranty_check() && !blocked) {
+        blocked = 1;
+    }
 
     for (i = 0; i < ATHOUT_MAX; i++) {
         if (outs[i].mode == PWM) {
@@ -183,8 +184,6 @@ void athout_update(double dt) {
             outupdate(&outs[i], dt);
         }
     }
-
-    ATH_UPL_RESET(waitout);
 }
 
 
@@ -205,6 +204,12 @@ void athout_off(uint8_t out) {
     //ath_pin_low(&outs[out].pin);
     ath_pin_set(&outs[out].pin, ATH_LOW);
     outs[out].i = 0;
+}
+
+void athout_xorone(uint8_t out) {
+    //if (outs[out].mode == PWM) return;
+    if (outs[out].state == OFF) athout_on(out);
+    else if (outs[out].state == ON)  athout_off(out);
 }
 
 void athout_blink(uint8_t out, double f, double t, uint8_t r) {
@@ -344,6 +349,7 @@ void outupdate_pwm(out * o, double dt) {
         o->dt -= dt;
         if (o->dt <= 0.0) { /* next note */
             o->i++;
+            athout_xorone(ATHOUT_RELAY);
 
             if (o->i >= o->notes) {
                 o->state = OFF;
@@ -352,7 +358,7 @@ void outupdate_pwm(out * o, double dt) {
             }
 
             o->dt += (1.0 / (double) (o->music[o->i].t & 0x1f)) *
-                (9.0 / o->tempo);
+                (256.0 / o->tempo);
             if (o->music[o->i].t & ATHM_H) {
                 o->dt *= 1.5;
             }

@@ -15,6 +15,8 @@
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 #define         UISTACK_SIZE    10
 
+#define MAX_UPDATE_FPS      30.0
+
 void            s_auto_init();
 void            s_auto_finish();
 void            s_auto(double dt);
@@ -135,8 +137,8 @@ void atsui_init() {
         sstack.stack[i] = -1;
     }
 
-    //atsui_changestate(ATSUI_AUTO);
-    atsui_changestate(ATSUI_MAIN);
+    atsui_changestate(ATSUI_AUTO);
+    //atsui_changestate(ATSUI_MAIN);
     //atsui_changestate(ATSUI_FREECONTROL);
     //atsui_changestate(ATSUI_LIGHT);
 
@@ -144,10 +146,17 @@ void atsui_init() {
 
 
 void atsui_update(double dt) {
+    //ATH_MAX_FPS(MAX_UPDATE_FPS);
+
+    static uint8_t blocked = 0;
+    if (blocked) return;
+    if (athwarranty_check() && !blocked) {
+        blocked = 1;
+        return;
+    }
+
     /* run the selected ui state */
     (*updatestates[sstack.stack[sstack.now]]) (dt);
-    
-    //athlcd_printf(0, "%7.3f|%7.3f", athdecoder_position(0), athdecoder_rps(0));
 }
 
 void atsui_changestate(ATSUI_M s) {
@@ -254,8 +263,14 @@ void s_auto(double dt) {
             strbufu[s][0] = '\0';
             strbufd[s][0] = '\0';
 
+            if (atspanel_error_check(s, ATSP_ERR_NOTRGS)) {
+                snprintf(strbufu[s], MAXCU, " 0/ 0");
+                snprintf(strbufd[s], MAXCD, "No ads");
+                continue;
+            } else
             if (atspanel_isdoing(s, ATSP_REFERENCE)) {
-                snprintf(strbufu[s], MAXCU, "REF");
+                snprintf(strbufu[s], MAXCU, "--/%2d", sv.a.utrgs[s]);
+                snprintf(strbufd[s], MAXCD, "REF");
                 continue;
             } else
             if (!atspanel_isdoing(s, ATSP_AREADY)) {
@@ -343,8 +358,8 @@ void s_main(double dt) {
     if (athin_clicking(ATHIN_RIGHT)) sv.m.selector++;
     if (athin_clicking(ATHIN_LEFT))  sv.m.selector--;
 
-    if (sv.m.selector < 0) sv.m.selector = 6 - 1;
-    sv.m.selector = abs(sv.m.selector) % (6);
+    if (sv.m.selector < 0) sv.m.selector = 5 - 1;
+    sv.m.selector = abs(sv.m.selector) % (5);
 
     switch (sv.m.selector) {
         case 0: athlcd_printf(1, "> side? %c", ats_wside() == ATH_SIDEA ? 'A' :
@@ -381,13 +396,13 @@ void s_main(double dt) {
                 return;
             }
             break;*/
-        case 4: athlcd_printf(1, "> settings");
+        /*case 4: athlcd_printf(1, "> settings");
             if (athin_clicked(ATHIN_OK)) {
                 atsui_changestate(ATSUI_SETTINGS);
                 return;
             }
-            break;
-        case 5: athlcd_printf(1, "> exit");
+            break;*/
+        case 4: athlcd_printf(1, "> exit");
             if (athin_clicked(ATHIN_OK)) {
                 sv.m.selector = -1;
                 return;
@@ -507,8 +522,8 @@ void s_freecontrol(double dt) {
     }
 
 
-    //athlcd_printf(1, "%6.2fr %5.2frps", athdecoder_position(ats_wside()),
-    //    athdecoder_rps(ats_wside()));
+    athlcd_printf(1, "%6.2fr %5.2frps", athdecoder_position(ats_wside()),
+        athdecoder_rps(ats_wside()));
 
 }
 

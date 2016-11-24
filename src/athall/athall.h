@@ -15,6 +15,12 @@
 
 #define ATH_RESET_EEPROM            1
 
+#define ATH_MAX_FPS_R(fps, r)       static double __max_fps; __max_fps += dt;\
+                                    if (__max_fps < (1.0 / (double) (fps)))\
+                                        return r;\
+                                    dt+= __max_fps; __max_fps = 0.0
+#define ATH_MAX_FPS(fps)            ATH_MAX_FPS_R(fps, )
+
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *

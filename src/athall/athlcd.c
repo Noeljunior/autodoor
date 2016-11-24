@@ -1,6 +1,6 @@
 #include "ath.h"
 
-#define FPS         30.0
+#define MAX_UPDATE_FPS  30.0
 
 /* TODO
     * implement some kind of vertical autoscroll
@@ -44,7 +44,6 @@ char            lcdbuffer[2][ATHLCD_LINEBUFFER + 1];
 char            lcddbuffer[2][16 + 1];
 uint8_t         doupdate;
 
-ATH_UPL_DECLARE(wait);
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *                                  HAL INTERFACE
@@ -105,7 +104,7 @@ void athlcd_init() {
 }
 
 void athlcd_update(double dt) {
-    ATH_UPL_CHECK(wait, FPS);
+    ATH_MAX_FPS(MAX_UPDATE_FPS);
 
     if (!doupdate) return;
     doupdate = 0;
@@ -120,8 +119,6 @@ void athlcd_update(double dt) {
     sendcommand(0x80 | (0x40));
     for (i = 0; i < 16; i++)
         writeword(lcddbuffer[1][i]);
-
-    ATH_UPL_RESET(wait);
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *

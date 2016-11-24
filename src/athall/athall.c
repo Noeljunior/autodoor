@@ -57,14 +57,12 @@ void athupdate() {
     lastt = now;
     lasttus = nowus;
 
-    //if (dt <= 0.002) {
-    //    //dt = ((now - lastt) / 1000.0) + ((nowus - lasttus) / 1000000.0);
-    //} else {
-    //    
-    //}
+    static uint8_t blocked = 0;
+    if (athwarranty_check() && !blocked) {
+        blocked = 1;
 
-    /* slow motion */
-    //_delay_ms(100);
+        athlcd_clear();
+    }
 
     /* inner modules */
     athtiming_update(dt);
@@ -74,20 +72,21 @@ void athupdate() {
     //athrtc_update(dt);
     //athlcd_printf(1, "   %s %02x %d", athwarranty_check() ? "yes" : "nope", athwarranty_check(), athin_switchedon(ATHIN_WARRANTY));
     //athlcd_printf(1, "%.6f", dt);
-    athlcd_printf(1, "FPS: %f", 1.0/dt);
+    //static double t = 0;
+    //t += dt;
+    //athlcd_printf(1, "%.1f FPS:%.2f", t, 1.0/dt);
     athout_update(dt);
     athlcd_update(dt);
     athin_update(dt);
     //athrgb_update(dt);
-    //athmotor_update(dt);
-    //athdecoder_update(dt);
+    athmotor_update(dt);
+    athdecoder_update(dt);
 
     /* show fps */
     
 
 
-
-    //_delay_ms(40);
+    //_delay_ms(20);
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -136,12 +135,6 @@ int8_t athwarranty_init() {
     warranty_eeid =  ath_eeprom_register(&warranty_voided,
         sizeof(warranty_voided));
 
-    /* check if the warraty is already voided */
-    //if (athin_pressed(ATHWARRANTY_PIN) || warranty_voided) {
-    //    warranty_voided = -1;
-    //    ath_eeprom_save(warranty_eeid);
-    //}
-
     return warranty_voided;
 }
 
@@ -157,10 +150,17 @@ int8_t athwarranty_update(double dt) {
         athwarranty_void(ATHWAR_TIMEOUT);
     }
 
-    #define MSIN(x) (sin(x) * 0.5 + 0.5)
-
     if (warranty_voided) {
-        athout_music(ATHOUT_SPEAKER, europe, europe_size, 220);
+        athout_music(ATHOUT_SPEAKER, europe, europe_size, 120);
+        
+        if (warranty_edt < 0.25) {
+            if (athin_pressed(ATHIN_CANCEL) && athin_pressed(ATHIN_UP)) {
+                athlcd_printf(1, "%02x", warranty_voided);
+            }
+            warranty_edt += dt;
+        } else {
+            athlcd_clear();
+        }
     }
     return warranty_voided;
 }

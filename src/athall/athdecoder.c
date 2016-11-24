@@ -5,7 +5,7 @@
     - some noise reduction on speed computation
 */
 
-#define FREQUENCY       30.0
+#define MAX_UPDATE_FPS  60.0
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *                               PRIVATE DECLARATIONS
@@ -36,8 +36,6 @@ decoder     deca     = {0},
             decb     = {0};
 decoder *   decs[2]  = {&deca, &decb};
 
-ATH_UPL_DECLARE(wait);
-
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *                                  HAL INTERFACE
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -49,12 +47,10 @@ void athdecoder_init() {
 }
 
 void athdecoder_update(double dt) {
-    ATH_UPL_CHECK(wait, FREQUENCY);
+    ATH_MAX_FPS(MAX_UPDATE_FPS);
 
     dec_read_d(decs[ATHD_SIDEA], dt);
     dec_read_d(decs[ATHD_SIDEB], dt);
-
-    ATH_UPL_RESET(wait);
 }
 
 

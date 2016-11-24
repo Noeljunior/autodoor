@@ -2,6 +2,8 @@
 
 #include <time.h>
 
+#define UPDATE_FREQUENCY        10.0
+
 #define     EPOCH2000   946684800
 
 
@@ -233,6 +235,8 @@ void athrtc_init() {
 }
 
 void athrtc_update(double dt) {
+    ATH_MAX_FPS(UPDATE_FREQUENCY);
+
     #define HC(hex) hex = ((hex >> 4) * 10 + (hex & 0x0F))
     #define HTC(hex) ((hex >> 4) * 10 + (hex & 0x0F))
 

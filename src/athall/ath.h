@@ -57,10 +57,8 @@
 #define ATHPIN(DEF)                 DEF##_PIN
 
 /* Update Limiter */
-#define ATH_UPL_DECLARE(var)        double var
-#define ATH_UPL_CHECK(var, hz)      var += dt; if (var < (1.0 / (double) (hz)))\
-                                        return
-#define ATH_UPL_RESET(var)          var = 0.0
+
+
 
 /* TRANSFORMATIONS */
 #define     ATHT_SIN(x, s, f)       (((sin((x) * M_PI - (M_PI / 2)) + 1) *\

@@ -14,6 +14,7 @@
 #define INTER_PRE             6.0
 #define INTER_POS             6.0
 
+#define MAX_UPDATE_FPS      30.0
 
 
 /* system global settings */
@@ -127,14 +128,32 @@ void atspanel_init() {
     init_panel(&state[ATH_SIDEB], ATH_SIDEB, ATHIN_DOOR, ATHIN_PAPER);
 
 
+
     /* init semaphore */
     //ath_seminit(&locksem);
 
 }
 
 void atspanel_update(double dt) {
-    /* TODO control both panel in mutual exclusion */
+    ATH_MAX_FPS(MAX_UPDATE_FPS);
 
+    static double lcdlight = 0.85;
+
+    static uint8_t blocked = 0;
+    if (blocked) return;
+    if (athwarranty_check() && !blocked) {
+        blocked = 1;
+
+        atspanel_ask(ATH_SIDEA, ATSP_OFF);
+        atspanel_ask(ATH_SIDEB, ATSP_OFF);
+
+        lcdlight = 0.0;
+    }
+
+    athout_dc(ATHOUT_LCDBL, lcdlight);
+    athout_dc(ATHOUT_LCDCONTRAST, 0.75);
+
+    /* TODO control both panel in mutual exclusion */
     update_panel(dt, &state[ATH_SIDEA]);
     update_panel(dt, &state[ATH_SIDEB]);
 
@@ -291,7 +310,6 @@ uint8_t atspanel_counttrgs_useful(uint8_t side) {
 
 void atspanel_walk(uint8_t side, uint8_t keyup, uint8_t keydown, uint8_t slow) {
     if (athin_clicked(keyup) || athin_longclicked(keyup)) {
-        athlcd_printf(1, "merda");
         athmotor_gos(ats_wside(), ATHM_UP, slow ? ATHM_SLOW : ATHM_NORMAL);
     } else
     if (athin_clicked(keydown) || athin_longclicked(keydown)) {
