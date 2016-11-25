@@ -18,7 +18,7 @@
 
 
 
-#define     PWM_HZ          25000UL
+#define     PWM_HZ          20000UL
 #define     LIMITTHRESHOLD  1000.0
 
 #define     STRENGTH_DIST   ((1.0 - ATHMOTOR_SPEED_START) * \
@@ -338,32 +338,32 @@ void controler_update(double dt, controler * c) {
     }
 
     /* paper limiting */
-    //if ((*c->dposition - ATHMOTOR_LIMIT_DIST) < c->limit_start &&
-    //        (c->tspeed < 0.0)) {
-    //    double dist = *c->dposition - c->limit_start;
+    if ((*c->dposition - ATHMOTOR_LIMIT_DIST) < c->limit_start &&
+            (c->tspeed < 0.0)) {
+        double dist = *c->dposition - c->limit_start;
 
-    //    c->tspeed = -ATHMOTOR_LIMIT_SPEED;
+        c->tspeed = -ATHMOTOR_LIMIT_SPEED;
 
-    //    if (dist < ATHMOTOR_LIMIT_STOP_DIST) {
-    //        c->state = c->tstate = BRAKE;
-    //        c->speed = c->tspeed = 0.0;
-    //        c->mode  = M_NONE;
-    //        //c->targeted = 1;
-    //    }
-    //} else
-    //if ((*c->dposition + ATHMOTOR_LIMIT_DIST) > c->limit_end &&
-    //        (c->tspeed > 0.0)) {
-    //    double dist = c->limit_end - *c->dposition;
+        if (dist < ATHMOTOR_LIMIT_STOP_DIST) {
+            c->state = c->tstate = BRAKE;
+            c->speed = c->tspeed = 0.0;
+            c->mode  = M_NONE;
+            //c->targeted = 1;
+        }
+    } else
+    if ((*c->dposition + ATHMOTOR_LIMIT_DIST) > c->limit_end &&
+            (c->tspeed > 0.0)) {
+        double dist = c->limit_end - *c->dposition;
 
-    //    c->tspeed = ATHMOTOR_LIMIT_SPEED;
+        c->tspeed = ATHMOTOR_LIMIT_SPEED;
 
-    //    if (dist < ATHMOTOR_LIMIT_STOP_DIST) {
-    //        c->state = c->tstate = BRAKE;
-    //        c->speed = c->tspeed = 0.0;
-    //        c->mode  = M_NONE;
-    //        //c->targeted = 1;
-    //    }
-    //}
+        if (dist < ATHMOTOR_LIMIT_STOP_DIST) {
+            c->state = c->tstate = BRAKE;
+            c->speed = c->tspeed = 0.0;
+            c->mode  = M_NONE;
+            //c->targeted = 1;
+        }
+    }
 
     /* speed-springing */
     double deltad = c->tspeed - c->speed;
@@ -389,15 +389,15 @@ void controler_update(double dt, controler * c) {
     else if (c->speed < 0.0) c->state = DOWN;
     else                     c->state = c->tstate;
 
-    /* compute the pwm */
-    double pwmda = fabs(ATHT_SIN(c->speed, ATHMOTOR_SPEED_START, c->speedf));
-    double pwmdb = pwmda;
+
 
     /* TODO strength on low speeding */
-    pwmdb = pwmda * ATHMOTOR_STRENGTH_PERC;
+    double pwmdbf = ATHMOTOR_STRENGTH_DIFF;
     if (fabs(c->speed) < ATHMOTOR_STRENGTH_PERC) {
-        double diff = fabs(c->speed);
-        
+        //pwmdbf = (fabs(c->speed) / ATHMOTOR_STRENGTH_PERC) / 5.0;
+        //if (pwmdbf < 0.2) {
+        //    dobreak = 1;
+        //}
         //if (diff > 0.8) {
         //    diff = 0.8;
         //}
@@ -408,8 +408,26 @@ void controler_update(double dt, controler * c) {
         //    //pwmdb = 0.5;
         //    //dobreak = 1;
         //}
-        pwmdb = pwmda * diff;
+        //pwmdb = pwmda * diff;
     }
+
+
+    /* compute the pwm */
+    double pwmda = fabs(ATHT_SIN(c->speed, ATHMOTOR_SPEED_START, c->speedf));
+    double pwmdb = pwmda * pwmdbf;
+
+
+    /* check if motors are running when they're supose to be running */
+    if ((c->state == UP || c->state == DOWN) &&
+        (fabs(*c->drps) < 0.05)) {
+        c->wait1 += dt;
+        if (c->wait1 > 1.5 && fabs(*c->drps) < 0.05) {
+            athwarranty_void(ATHWAR_HWERROR);
+        }
+    } else {
+        c->wait1 = 0.0;
+    }
+
 
     /* TODO check if speed is OK */
     //if (fabs(athdecoder_rps()) == 0.0 && c->wait1 > 0.5)
@@ -429,7 +447,6 @@ void controler_update(double dt, controler * c) {
     //}
     //athlcd_printf(1, "%d %d, %d", (c->speed > 0.0), (fabs(*c->drps) < 0.05), (c->speed > 0.0) && (fabs(*c->drps) < 0.05));
 
-    
 
 
 

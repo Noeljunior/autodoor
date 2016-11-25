@@ -6,13 +6,13 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *                               PRIVATE DECLARATIONS
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-#define STOP_STRETCH_TIME     0.6
+#define STOP_STRETCH_TIME     0.3
 #define STOP_THRESHOLD        0.1
 #define DIFF_THRESHOLD        (INTER_PAGE  0.5)
 #define LIMIT_CALIB           0.5
-#define INTER_PAGE            6.0
-#define INTER_PRE             6.0
-#define INTER_POS             6.0
+#define INTER_PAGE            6.5
+#define INTER_PRE             6.5
+#define INTER_POS             6.5
 
 #define MAX_UPDATE_FPS      30.0
 
@@ -111,7 +111,7 @@ void atspanel_init() {
     //state[ATH_SIDEA].eep.trgs[2].target   = 8.0;
     //state[ATH_SIDEA].eep.trgs[2].duration = 10.0;
 
-    /* postitions test */
+    ///* postitions test */
     //state[ATH_SIDEB].eep.trgs[0].inuse    = 1;
     //state[ATH_SIDEB].eep.trgs[0].target   = 2.0;
     //state[ATH_SIDEB].eep.trgs[0].duration = 7.5;
@@ -233,6 +233,7 @@ void atspanel_stop(uint8_t side, ATSP_ASK ask) {
         /* TODO check for problems that might be imcompatible with referencing */
         if (state[side].doing & ATSP_REFERENCE) { /* if doing it, stop it */
             state[side].doing  &=  ~ATSP_REFERENCE;
+            athmotor_go(side, ATHM_BRAKE);
         }
     }
 }
@@ -263,8 +264,9 @@ uint8_t atspanel_is_targeted(uint8_t side) {
 }
 
 uint8_t atspanel_counttrgs_estimation(uint8_t side) {
-    return (uint8_t)
-        ((state[side].eep.lenght - INTER_PRE - INTER_POS) / INTER_PAGE);
+    uint8_t est = (uint8_t)
+        ((state[side].eep.lenght - INTER_POS) / INTER_PAGE);
+    return est > ATSP_MAXTARGETS ? ATSP_MAXTARGETS : est;
 }
 
 void atspanel_use_estimation(uint8_t side) {
@@ -275,7 +277,7 @@ void atspanel_use_estimation(uint8_t side) {
             state[side].eep.trgs[i].inuse    = 1;
             state[side].eep.trgs[i].target   =
                 LIMIT_CALIB + INTER_PRE + INTER_PAGE * i;
-            state[side].eep.trgs[i].duration = 0.0;
+            state[side].eep.trgs[i].duration = 10.0;
         } else { /* reset others */
             state[side].eep.trgs[i].inuse    = 0;
             state[side].eep.trgs[i].target   = 0.0;
@@ -477,6 +479,14 @@ void update_panel(double dt, pstate * s) {
         athmotor_go(s->side, ATHM_STOP | ATHM_HARD);
     } else {
         if (s->doing & ATSP_SAUTO) { /* AUTO MODE */
+            /* check and mark errors: ATSP_ERR_TOOHOT */
+            if (athin_thermcalib(athin_adc(ATHIN_THERMISTOR)) > 50.0) {
+                atspanel_error_add(s->side, ATSP_ERR_TOOHOT);
+            } else {
+                if (athin_thermcalib(athin_adc(ATHIN_THERMISTOR)) < 40.0) {
+                    atspanel_error_clear(s->side, ATSP_ERR_TOOHOT);
+                }
+            }
             /* check and mark errors: DOOR */
             if (athin_switchedon(s->door)) {
                 atspanel_error_add(s->side, ATSP_ERR_DOOR);
@@ -508,7 +518,7 @@ void update_panel(double dt, pstate * s) {
                 /* check of errors */
                 if (atspanel_error_erroring(s->side)) {
                     athmotor_go(s->side, ATHM_BRAKE);
-                    s->aauto.wfd = 3.0 * (s->side + 1);
+                    s->aauto.wfd = 3.0;
                     return;
                 }
 
@@ -647,22 +657,29 @@ uint8_t reference(pstate * s, double dt) {
     } else
     if (r->state  == 5) { /* wait for reach the begining and exit */
         if (athmotor_targeted(s->side)) {
-            /* check if they match */
-            if (fabs(s->eep.lenght - r->lenght) <
-                    ATSP_MISMATCH_THRESHOLD) {
-                r->mismatch = 0;
-                atspanel_error_add(s->side, ATSP_ERR_PLENMIS);
+            /* check if there is too much lenght */
+            if (r->lenght >=
+                (LIMIT_CALIB * 2 + INTER_PRE + INTER_POS + INTER_PAGE * (ATSP_MAXTARGETS+0.5))) {
+                athwarranty_void(ATHWAR_TOOLENGHY);
             }
 
+            /* check if lenght match */
+            if (atspanel_isdoing(s->side, ATSP_SAUTO)) {
+                if (fabs(s->eep.lenght - r->lenght) < ATSP_MISMATCH_THRESHOLD) {
+                    atspanel_error_add(s->side, ATSP_ERR_PLENMIS);
+                }
+            }
             /* save panel's lenght */
-            s->eep.lenght = r->lenght;
+            else {
+                s->eep.lenght = r->lenght;
+                ath_eeprom_save(s->eepid);
+            }
+
 
             /* tell the moters its limits */
             athmotor_set_limits(s->side, r->limit_start, r->limit_end);
 
             /* exit */
-            athlcd_printf(1, "");
-
             r->state     = 0;
             r->safe_dist = -1.0;
             r->wait      = -1.0;

@@ -251,6 +251,7 @@ void athout_music(uint8_t out, note * music, uint8_t notes, double tempo) {
     outs[out].music  = music;
     outs[out].i  = -1;
     outs[out].notes  = notes;
+    outs[out].t  = 0.0;
 }
 
 void athout_dc(uint8_t out, double dc) {
@@ -364,10 +365,12 @@ void outupdate_pwm(out * o, double dt) {
             }
         }
 
-        double f = 440.0 * pow((1.059463094359), o->music[o->i].f);
+        o->t += dt * 3.0;
+
+        double f = (440.0 + sin(o->t) * 12.0) * pow((1.059463094359), o->music[o->i].f);
         double dc = 0.5;
 
-        if (o->dt < (9.0 / o->tempo) / 64.0) {
+        if (o->dt < (256.0 / o->tempo) / 64.0) {
             dc = 0.0;
         }
         ath_pin_pwm_freq(&o->pin, f, dc);

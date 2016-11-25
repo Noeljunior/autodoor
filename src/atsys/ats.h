@@ -20,7 +20,7 @@ char *          ats_time_tos(double t, uint8_t hp);
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *                                      ATS:PANEL
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-#define     ATSP_MISMATCH_THRESHOLD     1.0 /* more or less this revolutions */
+#define     ATSP_MISMATCH_THRESHOLD     2.0 /* more or less this revolutions */
 
 
 #ifndef TD_ATSGS_H_
@@ -55,6 +55,7 @@ typedef enum    ATSP_ERR {
                     ATSP_ERR_PLENMIS  = (1 << 4), /* a new reference mismatch the eeprom */
                     ATSP_ERR_NOTRGS   = (1 << 5), /* no targets defined */
                     ATSP_ERR_NOREF    = (1 << 6), /* no reference */
+                    ATSP_ERR_TOOHOT   = (1 << 7), /* no reference */
                 } ATSP_ERR;
 #endif
 #ifndef TD_ATSP_S_
@@ -67,7 +68,7 @@ typedef struct atsp_target { /* TODO day percentagem viewed */
 #endif
 
 /* CONFIG */
-#define         ATSP_MAXTARGETS         5
+#define         ATSP_MAXTARGETS         3
 
 /* DECLARATIONS */
 void            atspanel_init();

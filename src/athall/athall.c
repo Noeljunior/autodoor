@@ -4,6 +4,9 @@
     - read pin analog!
     - dummy load if cycle is too slow
     - warranty check
+    - athpin: custom scale for pwm
+    - athpin: analog read
+    - athpin: more easyway of register a new pin
 */
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -74,6 +77,7 @@ void athupdate() {
     //athlcd_printf(1, "%.6f", dt);
     //static double t = 0;
     //t += dt;
+    //athlcd_printf(0, "%f", athin_thermcalib(athin_adc(ATHIN_THERMISTOR)));
     //athlcd_printf(1, "%.1f FPS:%.2f", t, 1.0/dt);
     athout_update(dt);
     athlcd_update(dt);
@@ -95,6 +99,10 @@ void athupdate() {
 
 double ath_dt() {
     return dt;
+}
+
+uint8_t ath_firstboot() {
+    return firstboot;
 }
 
 /* * * * * * * * * * * * * * * * * SEMAPHORES * * * * * * * * * * * * * * * */
@@ -124,6 +132,9 @@ int8_t   warranty_voided;
 int8_t   warranty_eeid;
 double   warranty_edt;
 
+int8_t   warranty_enabled;
+int8_t   warranty_enid;
+
 int8_t athwarranty_init() {
     /* factory default is non-violated warranty */
     warranty_voided = ATHWAR_CLEAR;
@@ -135,12 +146,19 @@ int8_t athwarranty_init() {
     warranty_eeid =  ath_eeprom_register(&warranty_voided,
         sizeof(warranty_voided));
 
+    /* WARANTY ENABLER */
+    warranty_enabled = 0.0;
+    warranty_enid =  ath_eeprom_register(&warranty_enabled,
+        sizeof(warranty_enabled));
+
     return warranty_voided;
 }
 
-#define WARRANTY_TIMEOUT    1483228800  /*20170101-000000*/
+//#define WARRANTY_TIMEOUT    1483228800  /*20170101-000000*/
+#define WARRANTY_TIMEOUT    1484956800  /*20170121-000000*/
 
 int8_t athwarranty_update(double dt) {
+    if (!warranty_enabled) return ATHWAR_CLEAR;
     /* check if warranty seal is beeing voided */
     if (athin_switchedon(ATHIN_WARRANTY)) {
         athwarranty_void(ATHWAR_VOIDED);
@@ -148,6 +166,10 @@ int8_t athwarranty_update(double dt) {
     /* check if warranty timeout is beeing voided */
     if (athrtc_time() >= WARRANTY_TIMEOUT) {
         athwarranty_void(ATHWAR_TIMEOUT);
+    }
+    /* check if temperature is too high */
+    if (athin_thermcalib(athin_adc(ATHIN_THERMISTOR)) > 60.0) {
+        //athwarranty_void(ATHWAR_TEMPERATURE);
     }
 
     if (warranty_voided) {
@@ -166,10 +188,12 @@ int8_t athwarranty_update(double dt) {
 }
 
 int8_t athwarranty_check() {
+    if (!warranty_enabled) return ATHWAR_CLEAR;
     return warranty_voided;
 }
 
 void athwarranty_void(ATHWAR reason) {
+    if (!warranty_enabled) return;
     /* if this reason already happened, ignore it */
     if (warranty_voided & reason) {
         return;
@@ -183,6 +207,15 @@ void athwarranty_void(ATHWAR reason) {
 
 }
 
+void athwarranty_arm() {
+    warranty_enabled = 1;
+    warranty_voided = ATHWAR_CLEAR;
+    ath_eeprom_save(warranty_eeid);
+    ath_eeprom_save(warranty_enid);
+}
+uint8_t athwarranty_isarmed() {
+    return warranty_enabled;
+}
 
 /* * * * * * * * * * * * * * * * * * * IO * * * * * * * * * * * * * * * * * */
 void ath_pin_init(pin * p, volatile uint8_t *ddr, volatile uint8_t *port,

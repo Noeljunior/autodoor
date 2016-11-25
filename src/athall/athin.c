@@ -3,9 +3,29 @@
 /* TODO
     - read analog
     - implement some kind of global error and panel error
+    - let this struct have an enum
 */
 
-#define MAX_UPDATE_FPS  60.0
+#define MAX_UPDATE_FPS  120.0
+
+
+
+
+/* TODO ANALOG READ TODO */
+#define THERMISTOR_ADC 0x27 // A15 port
+#define ADC_ENABLE 0x80
+#define PRESCALER 0x07
+#define ADC_FLAG 0x10
+#define AUTO_TRIGGER 0x20
+#define INTERRUPT_EN 0x08
+
+#define ADC_START (ADCSRA |= 0x40)
+#define ADC_RESET (ADCSRA |= ADC_FLAG)//FREE MODE
+#define ADC_READY (ADCSRA & ADC_FLAG)
+/* TODO ANALOG READ TODO */
+
+
+
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *                               PRIVATE DECLARATIONS
@@ -30,7 +50,7 @@
 typedef struct {
     volatile uint8_t *port;
     pin         pin;
-    uint8_t     state;
+    uint16_t    state;
     double      pressing;
     uint8_t     mode;
 } inbutton;
@@ -87,11 +107,28 @@ void athin_init() {
     btns[ATHIN_WARRANTY].mode = SWITCH;
     ath_init_setmode(&btns[ATHIN_WARRANTY].pin, GALL(ATHIN_WARRANTY_PIN),
         ATHP_INPUT | ATHP_SET_PULLUP);
+
+
+    /* ATHIN_THERMISTOR */
+    btns[ATHIN_THERMISTOR].mode = ANALOG;
+    ath_init_setmode(&btns[ATHIN_THERMISTOR].pin, GALL(ATHIN_THERMISTOR_PIN),
+        ATHP_ANALOG);
+    /* TODO ANALOG READ TODO */
+    //01000111 - A15
+    ADMUX |= 0x40; // AVCC voltage reference
+    ADCSRB |= 0x00;
+    ADCSRA |= (ADC_ENABLE | PRESCALER | AUTO_TRIGGER); // CONTROL REGISTER
+    //ADCSRB = 0; // FREE RUNNING MODE
+
+    ADMUX |= (0x1f & THERMISTOR_ADC); //A15
+    ADCSRB |= (0x08&(THERMISTOR_ADC>>2));//(0x20 & port);
+    ADC_START;
+    /* TODO ANALOG READ TODO */
 }
 
 
 void athin_update(double dt) {
-    ATH_MAX_FPS(MAX_UPDATE_FPS);
+    //ATH_MAX_FPS(MAX_UPDATE_FPS);
     uint8_t i;
 
     for (i = 0; i < ATHIN_MAX; i++) {
@@ -141,6 +178,15 @@ uint8_t athin_switchedon(uint8_t in) {
     return (btns[in].state);
 }
 
+uint16_t athin_adc(uint8_t in) {
+    return (btns[in].state);
+}
+
+double athin_thermcalib(double v) {
+    v = log(10000 * (1024 / v - 1));
+    return ((1 / (0.001129148 + (0.000234125 * v) + (0.0000000876741 * v * v * v))) - 273.15) ;
+    //return (1 / (0.001593 + (0.000174 * v) + (0.000000205837 * v * v* v)))-273.15;
+}
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *                                 PRIVATE FUNCTIONS
@@ -153,6 +199,9 @@ void update_in(double dt, inbutton * in) {
     if (in->mode & (uint8_t) ANALOG) {
         //in->state = athgeta(keyboard->kbpin[i]);
         // TODO read analog
+        if (!ADC_READY) return;
+        ADC_RESET;
+        in->state = ADC;
         return;
     }
     /* digital read */

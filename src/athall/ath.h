@@ -229,7 +229,8 @@ void            athrgb_update(double dt);
 #define ATHMOTOR_CALIB_DPF          1.0
 #define ATHMOTOR_CALIB_MUP          1.0
 #define ATHMOTOR_CALIB_MDOWN        1.0
-#define ATHMOTOR_STRENGTH_PERC      0.75
+#define ATHMOTOR_STRENGTH_DIFF      0.7
+#define ATHMOTOR_STRENGTH_PERC      0.8
 #define ATHMOTOR_SPEED_FACTOR       0.70
 #define ATHMOTOR_SPEED_ABSMAX       0.9
 #define ATHMOTOR_SPEED_ABSMIN       0.30
@@ -238,9 +239,9 @@ void            athrgb_update(double dt);
 #define ATHMOTOR_SPEED_BRAKE        0.5
 #define ATHMOTOR_SPEED_ACCEL        3.5
 #define ATHMOTOR_SPEED_DEACEL       3.5
-#define ATHMOTOR_LIMIT_DIST         1.5
+#define ATHMOTOR_LIMIT_DIST         1.0
 #define ATHMOTOR_LIMIT_STOP_DIST    0.02
-#define ATHMOTOR_LIMIT_SPEED        0.1
+#define ATHMOTOR_LIMIT_SPEED        0.2
 
 
 /* DECLARATIONS */

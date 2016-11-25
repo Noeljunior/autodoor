@@ -239,6 +239,11 @@ void s_auto(double dt) {
         athlcd_printf(0, "    UNKNOWN     ");
         athlcd_printf(1, "     ERROR      ");
     } else
+    if (atspanel_error_check(ATH_SIDEA, ATSP_ERR_TOOHOT) ||
+        atspanel_error_check(ATH_SIDEB, ATSP_ERR_TOOHOT)) {
+        athlcd_printf(0, "      ERROR     ");
+        athlcd_printf(1, "     TOO HOT    ");
+    } else
     if (atspanel_error_check(ATH_SIDEA, ATSP_ERR_DOOR) ||
         atspanel_error_check(ATH_SIDEB, ATSP_ERR_DOOR)) {
         athlcd_printf(0, "      AUTO      ");
@@ -349,6 +354,39 @@ void s_main(double dt) {
         }
         return;
     }
+
+    /* WARANTY ARMER */
+    if (athin_longpressed(ATHIN_UP) && athin_longpressed(ATHIN_RIGHT) &&
+            athin_longpressed(ATHIN_LEFT) && !athwarranty_isarmed()) {
+        sv.m.selector = 5;
+    }
+    if (sv.m.selector == 5) {
+        if (athin_clicked(ATHIN_CANCEL)) { /* go back */
+            sv.m.selector = 0;
+            return;
+        }
+        static uint8_t arm = 0;
+
+        if (athin_clicked(ATHIN_UP))   arm = 1;
+        if (athin_clicked(ATHIN_DOWN)) arm = 0;
+
+
+        athlcd_printf(1, "Arm warranty? %c", arm ? 'Y' : 'N');
+
+        if (arm && athin_pressed(ATHIN_OK)) {
+            athlcd_printf(1, "WILL ARM WARANTY");
+        }
+        if (arm && athin_longpressed(ATHIN_OK)) {
+            athwarranty_arm();
+            sv.m.selector = 0;
+        }
+        if (!arm && athin_clicked(ATHIN_OK)) {
+            sv.m.selector = 0;
+        }
+
+        return;
+    }
+
 
     if (athin_clicked(ATHIN_CANCEL)) { /* go back */
         sv.m.selector = -1;
@@ -587,15 +625,11 @@ void s_configpubs(double dt) {
 
             if (athin_clicked(ATHIN_OK)) {
                 if (sv.c.unc) {
-                    //atspanel_copytrgs(atspanel_getrefs(ats_wside()),
-                    //    atspanel_getrefstmp(ats_wside()));
                     atspanel_use_estimation(ats_wside());
                 }
                 sv.c.state = 1;
             }
         } else {
-            //atspanel_copytrgs(atspanel_getrefs(ats_wside()),
-            //    atspanel_getrefstmp(ats_wside()));
             sv.c.state = 1;
         }
     } else
@@ -623,17 +657,20 @@ void s_configpubs(double dt) {
                     trgs[sv.c.ctrg].duration -= 29.0;
             }
 
-            uint8_t slow = 1;
-            if (athin_longpressed(ATHIN_UP) || athin_longpressed(ATHIN_DOWN)) {
-                slow = 0;
-            }
-            atspanel_walk(ats_wside(), ATHIN_UP, ATHIN_DOWN, slow);
 
             athlcd_printf(0, "[A] Ad %2d?", sv.c.ctrg + 1);
             athlcd_printf(1, "P: --.--, %s",
                 ats_time_tos(trgs[sv.c.ctrg].duration, 0));
 
             if (athmotor_islimited(ats_wside())) {
+                uint8_t slow = 1;
+                if (athin_longpressed(ATHIN_UP) || athin_longpressed(ATHIN_DOWN)) {
+                    slow = 0;
+                }
+
+                //if () TODO
+                atspanel_walk(ats_wside(), ATHIN_UP, ATHIN_DOWN, slow);
+
                 trgs[sv.c.ctrg].target = athmotor_position(ats_wside());
                 athlcd_printf(1, "P: %5.2f, %s", trgs[sv.c.ctrg].target,
                     ats_time_tos(trgs[sv.c.ctrg].duration, 0));

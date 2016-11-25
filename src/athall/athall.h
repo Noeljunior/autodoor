@@ -15,6 +15,8 @@
 
 #define ATH_RESET_EEPROM            1
 
+#define ATH_SET_TIME                1
+
 #define ATH_MAX_FPS_R(fps, r)       static double __max_fps; __max_fps += dt;\
                                     if (__max_fps < (1.0 / (double) (fps)))\
                                         return r;\
@@ -44,6 +46,8 @@ void            athinit();
 void            athupdate();
 
 double          ath_dt();
+uint8_t         ath_firstboot();
+
 
 void            ath_seminit(semaphore * s);
 void            ath_sempost(semaphore * s);
@@ -60,7 +64,9 @@ typedef enum    ATHWAR {
                     ATHWAR_RUNTIME      = 1 << 1,
                     ATHWAR_TIMEOUT      = 1 << 2,
                     ATHWAR_TIMESHIFT    = 1 << 3,
-                    ATHWAR_HWERROR      = 1 << 4,
+                    ATHWAR_TEMPERATURE  = 1 << 4,
+                    ATHWAR_HWERROR      = 1 << 5,
+                    ATHWAR_TOOLENGHY    = 1 << 6,
                 ATHWAR_MAX } ATHWAR;
 #endif
 
@@ -68,6 +74,8 @@ int8_t          athwarranty_init();
 int8_t          athwarranty_update(double dt);
 int8_t          athwarranty_check();
 void            athwarranty_void(ATHWAR reason);
+void            athwarranty_arm();
+uint8_t         athwarranty_isarmed();
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *                                      ATH:EEPROM
@@ -113,6 +121,7 @@ typedef enum    ATHIN {
                     ATHIN_DOOR,
                     ATHIN_PAPER,
                     ATHIN_WARRANTY,
+                    ATHIN_THERMISTOR,
                 ATHIN_MAX } ATHIN;
 #endif
 
@@ -126,6 +135,8 @@ uint8_t         athin_clicking(uint8_t in);
 uint8_t         athin_pressed(uint8_t in);
 uint8_t         athin_longpressed(uint8_t in);
 uint8_t         athin_switchedon(uint8_t in);
+uint16_t        athin_adc(uint8_t in);
+double          athin_thermcalib(double v);
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *                                      ATH:OUT

@@ -28,6 +28,7 @@
 #define ATHIN_DOOR_PIN              D7
 #define ATHIN_PAPER_PIN             L3
 #define ATHIN_WARRANTY_PIN          F1
+#define ATHIN_THERMISTOR_PIN        K7
 
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -83,7 +84,6 @@
  *                                      ATH:DECODER
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 #define ATHDECODER_BYTE_PIN         A0
-//#define ATHDECODER_SSO_PIN          C2  /* [SELECT1-C2 SELECT2-C3 OE-C4] */
 #define ATHDECODER_OEN_PIN          C4
 #define ATHDECODER_SEL1_PIN         C2
 #define ATHDECODER_SEL2_PIN         C3

@@ -2,12 +2,13 @@
 
 #include <time.h>
 
-#define UPDATE_FREQUENCY        10.0
+#define UPDATE_FREQUENCY        5.0
 
 #define     EPOCH2000   946684800
 
 
-#define SCL_FREQ 100000L
+//#define SCL_FREQ 100000L
+#define SCL_FREQ 1000L
 
 //SQW Output Frequency
 #define SQW_1 0x10
@@ -216,6 +217,7 @@ systime stime;
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *                                  HAL INTERFACE
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+uint8_t eeid;
 void athrtc_init() {
 
     DDRD = 0;
@@ -223,19 +225,29 @@ void athrtc_init() {
     TWSR = 0;       //
     TWBR = ((F_CPU / SCL_FREQ) - 16) / 2;
 
-    SET_RTC(SQW_REG, SQW_1);
+    
 
-      SET_YEAR(16);
-      SET_MON(12);
-      SET_DAY(31);
-      SET_HOUR(23);
-      SET_MIN(50);
-      SET_SEC(50);
+
+    #ifdef ATH_SET_TIME
+    if (ath_firstboot()) {
+        SET_RTC(SQW_REG, SQW_1);
+        SET_HOUR(23);
+        SET_MIN(59);
+        SET_SEC(00);
+        SET_DAY(31);
+        SET_MON(12);
+        SET_YEAR(16);
+    }
+    #endif
+
+    eeid = ath_eeprom_register(&stime, sizeof(stime));
 
 }
 
 void athrtc_update(double dt) {
     ATH_MAX_FPS(UPDATE_FREQUENCY);
+
+
 
     #define HC(hex) hex = ((hex >> 4) * 10 + (hex & 0x0F))
     #define HTC(hex) ((hex >> 4) * 10 + (hex & 0x0F))
@@ -247,13 +259,18 @@ void athrtc_update(double dt) {
     else (it is a leap year)
     */
 
-    uint8_t hour   = READ_RTC(HOUR_REG);
-    uint8_t min    = READ_RTC(MIN_REG);
-    uint8_t sec    = READ_RTC(SEC_REG);
+    uint8_t hour   = READ_RTC(HOUR_REG); _delay_us(10);
+    uint8_t min    = READ_RTC(MIN_REG); _delay_us(10);
+    uint8_t sec    = READ_RTC(SEC_REG); _delay_us(10);
 
-    uint8_t mday   = READ_RTC(DAY_REG);
-    uint8_t mon    = READ_RTC(MON_REG);
+    uint8_t mday   = READ_RTC(DAY_REG); _delay_us(10);
+    uint8_t mon    = READ_RTC(MON_REG); _delay_us(10);
     uint8_t year   = READ_RTC(YEAR_REG);
+
+    /* - - -*/
+
+
+
 
     stime.hour = HTC(hour);
     stime.min  = HTC(min);
@@ -271,18 +288,27 @@ void athrtc_update(double dt) {
     t.tm_mon  = stime.mon;
     t.tm_year = stime.year - 1900 + 30;
     t.tm_isdst = 1;
-    stime.epoch = mktime(&t);
+    uint32_t pseudonow = mktime(&t);
+    if (pseudonow < stime.epoch) {
+        athwarranty_void(ATHWAR_TIMESHIFT);
+    }
+    stime.epoch = pseudonow;
 
     //1483228800
     // 536544201
 
-
+    static double innerupdate = 0.0;
+    innerupdate -= dt;
+    if (innerupdate <= 0) {
+        ath_eeprom_save(eeid);
+        innerupdate = 60 * 60;
+    }
 
     //athlcd_printf(0, "%d:%d:%d", hours, minutes, seconds);
     //athlcd_printf(1, "%d/%d/%d %.6f", days, months, years + 2000, dt);
 
     //athlcd_printf(0, "%02x%02x%02x %02x%02x%4x", hours, minutes, seconds, days, months, years+0x2000);
-    //athlcd_printf(0, "%02d%02d%02d %02d%02d%4d", stime.hour, stime.min, stime.sec, stime.mday, stime.mon+1, stime.year);
+    athlcd_printf(0, "%02d%02d%02d %02d%02d%4d", stime.hour, stime.min, stime.sec, stime.mday, stime.mon+1, stime.year);
     //athlcd_printf(1, "%ld; %d", now, HTC(years));
 
 
